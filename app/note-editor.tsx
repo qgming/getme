@@ -16,8 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionItem, ActionMenu } from '../components/ActionMenu';
 import { useNoteStore } from '../stores';
-import { formatFullDateTime, Note, validateNote } from '../types/Note'=
-/=
+import { formatFullDateTime, Note, validateNote } from '../types/Note';
 
 export default function NoteEditorScreen() {
   const router = useRouter();
