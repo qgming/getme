@@ -1,50 +1,147 @@
-# Welcome to your Expo app 👋
+# GetMe Notes App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern React Native notes application optimized with **Expo Router** and **Zustand**.
 
-## Get started
+## 🚀 Features
 
-1. Install dependencies
+- ✨ **Expo Router** - File-based routing with type safety
+- 🎯 **Zustand** - Modern state management with excellent performance
+- 📱 **SQLite** - Local database storage
+- 📝 **Markdown Support** - Rich text editing with preview
+- 🔍 **Search** - Full-text search functionality
+- 🏷️ **Tagging** - Organize notes with tags
+- 🎨 **Modern UI** - Clean, responsive design
 
+## 📦 Tech Stack
+
+- **Framework**: Expo + React Native
+- **Routing**: Expo Router v6
+- **State Management**: Zustand v5
+- **Database**: Expo SQLite
+- **UI**: React Native + Ionicons
+- **Markdown**: react-native-markdown-display
+
+## 🚀 Quick Start
+
+1. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. **Start the app**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+3. **Run TypeScript checks**
+   ```bash
+   npx tsc --noEmit
+   ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+4. **Run linting**
+   ```bash
+   npm run lint
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 📁 Project Structure
 
-## Get a fresh project
+```
+app/                    # Expo Router pages
+├── _layout.tsx        # Root layout with Zustand initialization
+├── index.tsx          # Home screen - notes list
+├── note-editor.tsx    # Create/edit notes
+├── search.tsx         # Search functionality
+└── sidebar.tsx        # Navigation menu
 
-When you're ready, run:
+stores/                 # Zustand state management
+├── noteStore.ts       # Main store with all logic
+└── index.ts           # Public API
 
-```bash
-npm run reset-project
+services/               # Data layer
+└── database.ts        # SQLite operations
+
+components/             # UI components
+└── NoteCard.tsx       # Reusable note card
+
+types/                  # TypeScript definitions
+└── Note.ts            # Note interface & utilities
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🎯 State Management
 
-## Learn more
+The app uses **Zustand** for state management, providing:
 
-To learn more about developing your project with Expo, look at the following resources:
+- ⚡ **Performance**: Only re-renders when specific state changes
+- 🔒 **Type Safety**: Full TypeScript support
+- 🎨 **Developer Experience**: Great IDE integration
+- 📦 **Maintainability**: Clean separation of concerns
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Example Usage
 
-## Join the community
+```typescript
+import { useNoteStore } from '../stores';
 
-Join our community of developers creating universal apps.
+function MyComponent() {
+  // Subscribe to specific state
+  const notes = useNoteStore(state => state.notes);
+  const createNote = useNoteStore(state => state.createNote);
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+  return (
+    <View>
+      {notes.map(note => (
+        <Text key={note.id}>{note.title}</Text>
+      ))}
+    </View>
+  );
+}
+```
+
+## 🛠️ Development
+
+### Code Quality
+- ✅ TypeScript for type safety
+- ✅ ESLint for code quality
+- ✅ Consistent project structure
+
+### Available Scripts
+```bash
+npm start        # Start Expo development server
+npm run android  # Start on Android
+npm run ios      # Start on iOS
+npm run web      # Start on web
+npm run lint     # Run ESLint
+```
+
+## 📖 Documentation
+
+- **[Optimization Guide](./OPTIMIZATION.md)** - Detailed migration from Context to Zustand
+- **[Store Documentation](./stores/README.md)** - Complete Zustand API reference
+
+## 🎨 Architecture Benefits
+
+### Performance
+- 🚀 Minimal re-renders with Zustand selectors
+- 📊 Efficient state updates
+- 🔄 Optimized database operations
+
+### Developer Experience
+- 🔍 Full type inference
+- 🎯 Autocomplete support
+- 📝 Clear separation of concerns
+
+### Maintainability
+- 🏗️ Scalable architecture
+- 🧪 Easy to test
+- 🔧 Simple to extend
+
+## 🚀 Next Steps
+
+1. Add user authentication
+2. Implement cloud sync
+3. Add export/import functionality
+4. Dark mode support
+5. Rich text formatting toolbar
+
+## 📄 License
+
+MIT

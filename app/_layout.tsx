@@ -1,24 +1,43 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { useNoteStore } from '../stores';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const initialize = useNoteStore(state => state.initialize);
+
+  // 初始化应用
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="note-editor"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_bottom'
+          }}
+        />
+        <Stack.Screen
+          name="search"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right'
+          }}
+        />
+        <Stack.Screen
+          name="sidebar"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_left'
+          }}
+        />
       </Stack>
       <StatusBar style="auto" />
-    </ThemeProvider>
+    </>
   );
 }

@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s d:\\\\dev\\\\reactnative\\\\getme\\\\constants:*)",
+      "Bash(git -C:*)",
+      "Bash(tree:*)",
+      "Bash(findstr:*)",
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npx expo install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run lint)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(npx expo doctor:*)",
+      "Bash(npx expo-doctor:*)",
+      "Bash(npx expo start --help:*)",
+      "Bash(python3:*)",
+      "Bash(dir:*)",
+      "Bash(git checkout:*)"
+    ]
+  }
+}
