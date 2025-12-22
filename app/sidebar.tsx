@@ -9,88 +9,98 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActionMenu } from '../components/ActionMenu';
 import { useNoteStore } from '../stores';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.85;
 
-interface SidebarItem {
-  icon: string;
-  title: string;
-  onPress: () => void;
-  color?: string;
-  isActive?: boolean;
-  iconType?: 'ionicons' | 'material';
-}
-
-interface TagItem {
-  id: string;
-  name: string;
-  icon: string;
-  isPinned?: boolean;
-}
-
 export default function SidebarScreen() {
   const router = useRouter();
-  const { getStatistics } = useNoteStore();
+  const insets = useSafeAreaInsets();
+  const { getStatistics, getAllTags, pinnedTags, togglePinTag, loadPinnedTags } = useNoteStore();
   const [stats, setStats] = useState({
     notes: 0,
     tags: 0,
-    days: 1384, // 模拟数据
+    days: 0,
   });
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [showActionMenu, setShowActionMenu] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
 
-  // 模拟标签数据
-  const pinnedTags: TagItem[] = [
-    { id: '1', name: '📖方法论', icon: 'book' },
-    { id: '2', name: '🤔思考人生', icon: 'pound' },
-  ];
+  const translateX = useSharedValue(0);
 
-  const allTags: TagItem[] = [
-    { id: '1', name: '📖方法论', icon: 'book' },
-    { id: '2', name: '🤔思考人生', icon: 'pound' },
-    { id: '3', name: '💻产品思考', icon: 'laptop' },
-  ];
-
-  // 加载统计数据
   useEffect(() => {
-    const loadStats = async () => {
-      setIsLoadingStats(true);
+    const loadData = async () => {
       try {
+        await loadPinnedTags();
+
         const statistics = await getStatistics();
+        const tags = getAllTags();
+        const notes = useNoteStore.getState().notes;
+
+        let daysDiff = 0;
+        if (notes.length > 0) {
+          const oldestNote = notes.reduce((oldest, note) =>
+            new Date(note.createdAt) < new Date(oldest.createdAt) ? note : oldest
+          );
+          const firstNoteDate = new Date(oldestNote.createdAt);
+          const today = new Date();
+          daysDiff = Math.floor((today.getTime() - firstNoteDate.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
         setStats({
           notes: statistics.totalNotes,
-          tags: statistics.taggedNotes,
-          days: 1384,
+          tags: tags.length,
+          days: daysDiff,
         });
+        setAllTags(tags);
       } catch (error) {
-        console.error('加载统计数据失败:', error);
-      } finally {
-        setIsLoadingStats(false);
+        console.error('加载数据失败:', error);
       }
     };
 
-    loadStats();
-  }, [getStatistics]);
+    loadData();
+  }, [getStatistics, getAllTags, loadPinnedTags]);
 
-  const handleBack = () => {
+  const handleClose = () => {
     router.back();
   };
 
-  // 渲染贡献图 (Activity Graph) 模拟
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .onUpdate((e) => {
+      if (e.translationX < 0) {
+        translateX.value = e.translationX;
+      }
+    })
+    .onEnd((e) => {
+      'worklet';
+      if (e.translationX < -50 || e.velocityX < -500) {
+        runOnJS(handleClose)();
+      } else {
+        translateX.value = withTiming(0);
+      }
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
   const renderActivityGraph = () => {
     const rows = 7;
     const cols = 18;
     const cells = [];
     for (let i = 0; i < rows * cols; i++) {
-      const isActive = i === 42 || i === 120; // 模拟活跃点
       cells.push(
         <View
           key={i}
           style={[
             styles.graphCell,
-            isActive && styles.graphCellActive,
             i === rows * cols - 1 && styles.graphCellToday,
           ]}
         />
@@ -101,7 +111,6 @@ export default function SidebarScreen() {
       <View style={styles.graphContainer}>
         <View style={styles.graphGrid}>{cells}</View>
         <View style={styles.graphLabels}>
-          <Text style={styles.graphLabel}>10月</Text>
           <Text style={styles.graphLabel}>11月</Text>
           <Text style={styles.graphLabel}>12月</Text>
         </View>
@@ -109,7 +118,7 @@ export default function SidebarScreen() {
     );
   };
 
-  const menuItems: SidebarItem[] = [
+  const menuItems = [
     {
       icon: 'grid',
       title: '全部笔记',
@@ -117,23 +126,40 @@ export default function SidebarScreen() {
       onPress: () => router.back(),
     },
     {
-      icon: 'sparkles',
+      icon: 'sparkles-outline',
       title: '每日回顾',
       onPress: () => {},
     },
     {
-      icon: 'radio-button-off',
+      icon: 'aperture-outline',
       title: 'AI 洞察',
       onPress: () => {},
     },
   ];
 
+  const getTagIcon = (tag: string) => {
+    if (tag.includes('方法论')) return 'book-open-variant';
+    if (tag.includes('思考')) return 'thought-bubble-outline';
+    if (tag.includes('产品')) return 'monitor';
+    return 'pound';
+  };
+
   return (
     <View style={styles.overlay}>
-      <TouchableOpacity style={styles.backdrop} onPress={handleBack} activeOpacity={1} />
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <TouchableOpacity
+        style={styles.backdrop}
+        onPress={handleClose}
+        activeOpacity={1}
+      />
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.container, animatedStyle]}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }
+            ]}
+          >
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
@@ -183,7 +209,7 @@ export default function SidebarScreen() {
                   <Ionicons
                     name={item.icon as any}
                     size={20}
-                    color={item.isActive ? '#FFFFFF' : '#4b5563'}
+                    color={item.isActive ? '#FFFFFF' : '#1f2937'}
                   />
                   <Text style={[styles.menuTitle, item.isActive && styles.menuTitleActive]}>
                     {item.title}
@@ -193,52 +219,125 @@ export default function SidebarScreen() {
             </View>
 
             {/* Pinned Tags */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>置顶标签</Text>
-            </View>
-            <View style={styles.tagList}>
-              {pinnedTags.map((tag) => (
-                <TouchableOpacity key={tag.id} style={styles.tagItem}>
-                  <View style={styles.tagLeft}>
-                    {tag.icon === 'pound' ? (
-                      <MaterialCommunityIcons name="pound" size={18} color="#4b5563" />
-                    ) : (
-                      <Text style={styles.tagEmoji}>📙</Text>
-                    )}
-                    <Text style={styles.tagText}>{tag.name}</Text>
-                  </View>
-                  <Ionicons name="ellipsis-horizontal" size={18} color="#D1D5DB" />
-                </TouchableOpacity>
-              ))}
-            </View>
+            {pinnedTags.length > 0 && (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>置顶标签</Text>
+                </View>
+                <View style={styles.tagList}>
+                  {pinnedTags.map((tag, index) => (
+                    <View key={`pinned-${index}`} style={styles.tagItem}>
+                      <View style={styles.tagLeft}>
+                        <MaterialCommunityIcons 
+                          name={getTagIcon(tag)} 
+                          size={18} 
+                          color="#1f2937" 
+                        />
+                        <Text style={styles.tagText}>{tag}</Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.currentTarget.measure((x, y, width, height, pageX, pageY) => {
+                            setSelectedTag(tag);
+                            setMenuAnchor({ x: pageX + width, y: pageY + height / 2 });
+                            setShowActionMenu(true);
+                          });
+                        }}
+                        style={styles.moreButton}
+                      >
+                        <Ionicons name="ellipsis-horizontal" size={18} color="#9CA3AF" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
 
             {/* All Tags */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>全部标签</Text>
-              <TouchableOpacity>
-                <Ionicons name="options-outline" size={18} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.tagList}>
-              {allTags.map((tag) => (
-                <TouchableOpacity key={tag.id} style={styles.tagItem}>
-                  <View style={styles.tagLeft}>
-                    {tag.icon === 'pound' ? (
-                      <MaterialCommunityIcons name="pound" size={18} color="#4b5563" />
-                    ) : tag.icon === 'laptop' ? (
-                      <Text style={styles.tagEmoji}>💻</Text>
-                    ) : (
-                      <Text style={styles.tagEmoji}>📙</Text>
-                    )}
-                    <Text style={styles.tagText}>{tag.name}</Text>
-                  </View>
-                  <Ionicons name="ellipsis-horizontal" size={18} color="#D1D5DB" />
-                </TouchableOpacity>
-              ))}
-            </View>
+            {allTags.length > 0 && (
+              <>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>全部标签</Text>
+                </View>
+                <View style={styles.tagList}>
+                  {allTags.map((tag, index) => {
+                    return (
+                      <View key={index} style={styles.tagItem}>
+                        <View style={styles.tagLeft}>
+                          <MaterialCommunityIcons 
+                            name={getTagIcon(tag)} 
+                            size={18} 
+                            color="#1f2937" 
+                          />
+                          <Text style={styles.tagText}>{tag}</Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.currentTarget.measure((x, y, width, height, pageX, pageY) => {
+                              setSelectedTag(tag);
+                              setMenuAnchor({ x: pageX + width, y: pageY + height / 2 });
+                              setShowActionMenu(true);
+                            });
+                          }}
+                          style={styles.moreButton}
+                        >
+                          <Ionicons name="ellipsis-horizontal" size={18} color="#9CA3AF" />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
+              </>
+            )}
           </ScrollView>
-        </View>
-      </SafeAreaView>
+        </Animated.View>
+      </GestureDetector>
+
+      {/* Action Menu */}
+      <ActionMenu
+        visible={showActionMenu}
+        onClose={() => {
+          setShowActionMenu(false);
+          setMenuAnchor(null);
+          setSelectedTag(null);
+        }}
+        anchorPosition={menuAnchor}
+        actions={[
+          {
+            label: selectedTag && pinnedTags.includes(selectedTag) ? '取消置顶' : '置顶',
+            icon: 'push-outline',
+            onPress: async () => {
+              if (selectedTag) {
+                await togglePinTag(selectedTag);
+                const tags = getAllTags();
+                setAllTags(tags);
+              }
+            },
+          },
+          {
+            label: '编辑名称',
+            icon: 'create-outline',
+            onPress: () => {
+              console.log('编辑标签:', selectedTag);
+            },
+          },
+          {
+            label: '仅删除标签',
+            icon: 'pricetag-outline',
+            onPress: () => {
+              console.log('仅删除标签:', selectedTag);
+            },
+          },
+          {
+            label: '删除标签和笔记',
+            icon: 'trash-outline',
+            onPress: () => {
+              console.log('删除标签和笔记:', selectedTag);
+            },
+            isDestructive: true,
+          },
+        ]}
+      />
     </View>
   );
 }
@@ -256,27 +355,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  safeArea: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
   container: {
     width: SIDEBAR_WIDTH,
     height: '100%',
-    backgroundColor: '#f9fafb',
-    borderTopRightRadius: 24,
-    borderBottomRightRadius: 24,
+    backgroundColor: '#FFFFFF',
     overflow: 'hidden',
   },
-  scrollContent: {
-    paddingBottom: 40,
-  },
+  scrollContent: {},
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
     paddingBottom: 10,
   },
   headerLeft: {
@@ -340,20 +430,18 @@ const styles = StyleSheet.create({
   graphCell: {
     width: (SIDEBAR_WIDTH - 40 - 17 * 4) / 18,
     height: (SIDEBAR_WIDTH - 40 - 17 * 4) / 18,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: '#f3f4f6',
     borderRadius: 2,
-  },
-  graphCellActive: {
-    backgroundColor: '#34d399',
   },
   graphCellToday: {
     borderWidth: 1,
     borderColor: '#10b981',
+    backgroundColor: '#ecfdf5',
   },
   graphLabels: {
     flexDirection: 'row',
     marginTop: 8,
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     paddingRight: 20,
   },
   graphLabel: {
@@ -373,11 +461,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   menuItemActive: {
-    backgroundColor: '#34d399',
+    backgroundColor: '#2ecc71',
   },
   menuTitle: {
     fontSize: 16,
-    color: '#4b5563',
+    color: '#1f2937',
     marginLeft: 12,
     fontWeight: '500',
   },
@@ -393,8 +481,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 14,
-    color: '#D1D5DB',
+    fontSize: 16,
+    color: '#D2B48C',
     fontWeight: '500',
   },
   tagList: {
@@ -410,14 +498,14 @@ const styles = StyleSheet.create({
   tagLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  tagEmoji: {
-    fontSize: 16,
-    marginRight: 12,
+    flex: 1,
   },
   tagText: {
     fontSize: 16,
-    color: '#4b5563',
+    color: '#1f2937',
     marginLeft: 12,
+  },
+  moreButton: {
+    padding: 4,
   },
 });

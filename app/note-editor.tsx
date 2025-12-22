@@ -1,10 +1,12 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -36,23 +38,29 @@ export default function NoteEditorScreen() {
   const [anchorPosition, setAnchorPosition] = useState<{ x: number; y: number } | null>(null);
   const menuButtonRef = useRef<View>(null);
 
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const [tagModalVisible, setTagModalVisible] = useState(false);
+  const [tagInput, setTagInput] = useState('');
 
+  const scrollViewRef = useRef<ScrollView>(null);
+  const textInputRef = useRef<TextInput>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 简化的键盘处理：当键盘显示时自动滚动到底部
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => setKeyboardHeight(e.endCoordinates.height)
-    );
-
-    const keyboardWillHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardHeight(0)
+      () => {
+        // 延迟滚动，确保键盘完全显示
+        setTimeout(() => {
+          if (scrollViewRef.current) {
+            scrollViewRef.current.scrollToEnd({ animated: true });
+          }
+        }, 100);
+      }
     );
 
     return () => {
       keyboardWillShowListener.remove();
-      keyboardWillHideListener.remove();
     };
   }, []);
 
@@ -96,23 +104,8 @@ export default function NoteEditorScreen() {
     loadNote();
   }, [params.noteId, noteStore]);
 
-  // 检查内容是否有变化
-  const hasChanges = () => {
-    const contentChanged = content.trim() !== originalContent.trim();
-    const tagsChanged = JSON.stringify(tags) !== JSON.stringify(originalTags);
-    return contentChanged || tagsChanged;
-  };
-
-  // 处理返回并自动保存（仅在有变化且未手动保存时）
-  const handleBack = async () => {
-    if (hasChanges() && content.trim() && !isSaving) {
-      await handleSave(false);
-    }
-    router.back();
-  };
-
   // 处理保存
-  const handleSave = async (showFeedback = true) => {
+  const handleSave = useCallback(async (showFeedback = true) => {
     if (!content.trim()) return;
 
     const noteData = {
@@ -159,6 +152,47 @@ export default function NoteEditorScreen() {
     } finally {
       setIsSaving(false);
     }
+  }, [content, tags, noteId, createdAt, updateNote, createNote]);
+
+  // 标签变化时立即保存
+  useEffect(() => {
+    if (JSON.stringify(tags) !== JSON.stringify(originalTags) && content.trim()) {
+      handleSave(false);
+    }
+  }, [tags, originalTags, content, handleSave]);
+
+  // 内容变化后延迟自动保存
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    if (content.trim() && content.trim() !== originalContent.trim()) {
+      autoSaveTimerRef.current = setTimeout(() => {
+        handleSave(false);
+      }, 2000);
+    }
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [content, originalContent, handleSave]);
+
+  // 退出页面时保存
+  useEffect(() => {
+    return () => {
+      if (content.trim() && (content.trim() !== originalContent.trim() || JSON.stringify(tags) !== JSON.stringify(originalTags))) {
+        handleSave(false);
+      }
+    };
+  }, [content, tags, originalContent, originalTags, handleSave]);
+
+  // 处理返回
+  const handleBack = async () => {
+    if (content.trim() && (content.trim() !== originalContent.trim() || JSON.stringify(tags) !== JSON.stringify(originalTags)) && !isSaving) {
+      await handleSave(false);
+    }
+    router.back();
   };
 
   // 删除笔记
@@ -210,13 +244,36 @@ export default function NoteEditorScreen() {
 
   // 处理手动保存
   const handleManualSave = async () => {
-    if (!hasChanges() || isSaving) return;
+    const contentChanged = content.trim() !== originalContent.trim();
+    const tagsChanged = JSON.stringify(tags) !== JSON.stringify(originalTags);
+    if (!(contentChanged || tagsChanged) || isSaving) return;
     await handleSave(false);
+  };
+
+  // 处理内容变化
+  const handleContentChange = (text: string) => {
+    setContent(text);
+  };
+
+  // 处理添加标签
+  const handleAddTag = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+    }
+    setTagInput('');
+    setTagModalVisible(false);
+  };
+
+  // 处理删除标签
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
   // 渲染头部
   const renderHeader = () => {
-    const showSaveButton = hasChanges();
+    const contentChanged = content.trim() !== originalContent.trim();
+    const tagsChanged = JSON.stringify(tags) !== JSON.stringify(originalTags);
+    const showSaveButton = contentChanged || tagsChanged;
 
     return (
       <View style={styles.header}>
@@ -244,30 +301,13 @@ export default function NoteEditorScreen() {
     );
   };
 
-  // 渲染底部工具栏
-  const renderToolbar = () => (
-    <View style={styles.toolbar}>
-      <TouchableOpacity style={styles.toolbarButton}>
-        <MaterialCommunityIcons name="pound" size={24} color="#4b5563" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.toolbarButton}>
-        <Ionicons name="image-outline" size={24} color="#4b5563" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.toolbarButton}>
-        <MaterialCommunityIcons name="format-bold" size={24} color="#4b5563" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.toolbarButton}>
-        <MaterialCommunityIcons name="format-list-bulleted" size={24} color="#4b5563" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.toolbarButton}>
-        <Ionicons name="ellipsis-horizontal" size={24} color="#4b5563" />
-      </TouchableOpacity>
-    </View>
-  );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         {renderHeader()}
 
         <ScrollView
@@ -276,15 +316,32 @@ export default function NoteEditorScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
-          contentInset={{ bottom: keyboardHeight }}
-          scrollIndicatorInsets={{ bottom: keyboardHeight }}
         >
           <Text style={styles.dateText}>{formatFullDateTime(createdAt)}</Text>
+
+          {/* 标签区域 */}
+          {tags.length > 0 && (
+            <View style={styles.tagContainer}>
+              {tags.map((tag, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.tag}
+                  onPress={() => handleRemoveTag(tag)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.tagText}>#{tag}</Text>
+                  <Ionicons name="close-circle" size={14} color="#3b82f6" style={styles.tagClose} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
           <TextInput
+            ref={textInputRef}
             style={styles.contentInput}
             placeholder="输入内容..."
             value={content}
-            onChangeText={setContent}
+            onChangeText={handleContentChange}
             multiline
             textAlignVertical="top"
             placeholderTextColor="#d1d5db"
@@ -292,8 +349,17 @@ export default function NoteEditorScreen() {
           />
         </ScrollView>
 
-        {renderToolbar()}
-      </View>
+        {/* 底部工具栏 */}
+        <View style={styles.toolbar}>
+          <TouchableOpacity
+            style={styles.toolbarButton}
+            onPress={() => setTagModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="pricetag-outline" size={22} color="#6366f1" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
 
       <ActionMenu
         visible={menuVisible}
@@ -301,6 +367,50 @@ export default function NoteEditorScreen() {
         anchorPosition={anchorPosition}
         actions={menuActions}
       />
+
+      {/* 标签添加弹窗 */}
+      <Modal
+        visible={tagModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setTagModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setTagModalVisible(false)}
+        >
+          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>添加标签</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="输入标签名称"
+              value={tagInput}
+              onChangeText={setTagInput}
+              autoFocus
+              onSubmitEditing={handleAddTag}
+              placeholderTextColor="#9ca3af"
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setTagInput('');
+                  setTagModalVisible(false);
+                }}
+              >
+                <Text style={styles.modalButtonTextCancel}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={handleAddTag}
+              >
+                <Text style={styles.modalButtonTextConfirm}>添加</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -313,8 +423,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  keyboardAvoid: {
+    flex: 1,
+  },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   header: {
     flexDirection: 'row',
@@ -338,8 +451,8 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 14,
     color: '#d1d5db',
-    marginBottom: 12,
-    marginTop: 8,
+    marginBottom: 4,
+    marginTop: 12,
     paddingHorizontal: 20,
   },
   contentInput: {
@@ -347,20 +460,102 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     color: '#374151',
     minHeight: 200,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 4,
+    paddingHorizontal: 18,
+  },
+  tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: '#eff6ff',
+    gap: 4,
+  },
+  tagText: {
+    fontSize: 13,
+    color: '#3b82f6',
+    fontWeight: '500',
+  },
+  tagClose: {
+    marginLeft: 2,
+  },
+  toolbarSafeArea: {
+    backgroundColor: '#f9fafb',
   },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    backgroundColor: '#f9fafb',
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
-    backgroundColor: '#ffffff',
-    paddingBottom: Platform.OS === 'ios' ? 0 : 12,
   },
   toolbarButton: {
-    padding: 8,
+    padding: 6,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 20,
+    width: '80%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 16,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#374151',
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: '#f3f4f6',
+  },
+  modalButtonConfirm: {
+    backgroundColor: '#6366f1',
+  },
+  modalButtonTextCancel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  modalButtonTextConfirm: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });

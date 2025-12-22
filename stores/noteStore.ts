@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Note } from '../types/Note';
 import {
   initDatabase,
@@ -16,6 +17,7 @@ interface NoteState {
   notes: Note[];
   loading: boolean;
   initialized: boolean;
+  pinnedTags: string[];
 
   // 计算属性
   totalNotes: number;
@@ -37,6 +39,10 @@ interface NoteState {
   getNotesByTag: (tag: string) => Note[];
   getAllTags: () => string[];
   hasNotes: () => boolean;
+
+  // 标签置顶
+  togglePinTag: (tag: string) => Promise<void>;
+  loadPinnedTags: () => Promise<void>;
 }
 
 // 创建 Zustand store
@@ -45,6 +51,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   notes: [],
   loading: true,
   initialized: false,
+  pinnedTags: [],
 
   // 计算属性初始值
   totalNotes: 0,
@@ -207,18 +214,61 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     return get().notes.filter(n => n.tags?.includes(tag));
   },
 
-  // 工具方法：获取所有唯一标签
+  // 工具方法：获取所有唯一标签（置顶标签在前）
   getAllTags: () => {
     const tags = new Set<string>();
     get().notes.forEach(note => {
       note.tags?.forEach(tag => tags.add(tag));
     });
-    return Array.from(tags);
+    const allTags = Array.from(tags);
+    const pinnedTags = get().pinnedTags;
+
+    // 排序：置顶标签在前，其他标签在后
+    return allTags.sort((a, b) => {
+      const aPinned = pinnedTags.includes(a);
+      const bPinned = pinnedTags.includes(b);
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+      return a.localeCompare(b);
+    });
   },
 
   // 工具方法：检查是否存在笔记
   hasNotes: () => {
     return get().notes.length > 0;
+  },
+
+  // 加载置顶标签
+  loadPinnedTags: async () => {
+    try {
+      const pinnedTagsString = await AsyncStorage.getItem('pinnedTags');
+      const pinnedTags = pinnedTagsString ? JSON.parse(pinnedTagsString) : [];
+      set({ pinnedTags });
+      return pinnedTags;
+    } catch (error) {
+      console.error('加载置顶标签失败:', error);
+      return [];
+    }
+  },
+
+  // 切换标签置顶状态
+  togglePinTag: async (tag: string) => {
+    try {
+      const currentPinned = get().pinnedTags;
+      const isPinned = currentPinned.includes(tag);
+
+      let newPinnedTags: string[];
+      if (isPinned) {
+        newPinnedTags = currentPinned.filter(t => t !== tag);
+      } else {
+        newPinnedTags = [...currentPinned, tag];
+      }
+
+      await AsyncStorage.setItem('pinnedTags', JSON.stringify(newPinnedTags));
+      set({ pinnedTags: newPinnedTags });
+    } catch (error) {
+      console.error('切换标签置顶失败:', error);
+    }
   },
 }));
 
@@ -236,4 +286,6 @@ export const noteActions = {
   getNotesByTag: (tag: string) => useNoteStore.getState().getNotesByTag(tag),
   getAllTags: () => useNoteStore.getState().getAllTags(),
   hasNotes: () => useNoteStore.getState().hasNotes(),
+  togglePinTag: (tag: string) => useNoteStore.getState().togglePinTag(tag),
+  loadPinnedTags: () => useNoteStore.getState().loadPinnedTags(),
 };
