@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 interface ActivityHeatmapProps {
   notes: Array<{ createdAt: string }>;
@@ -7,6 +8,8 @@ interface ActivityHeatmapProps {
 }
 
 export function ActivityHeatmap({ notes, width }: ActivityHeatmapProps) {
+  const { colors } = useTheme();
+
   const heatmapData = useMemo(() => {
     const today = new Date();
     const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -35,11 +38,11 @@ export function ActivityHeatmap({ notes, width }: ActivityHeatmapProps) {
   }, [notes]);
 
   const getColor = (count: number) => {
-    if (count === 0) return '#f3f4f6';
-    if (count === 1) return '#d1fae5';
-    if (count === 2) return '#6ee7b7';
-    if (count === 3) return '#34d399';
-    return '#10b981';
+    if (count === 0) return colors.heatmap[0];
+    if (count === 1) return colors.heatmap[1];
+    if (count === 2) return colors.heatmap[2];
+    if (count === 3) return colors.heatmap[3];
+    return colors.heatmap[4];
   };
 
   const cellSize = (width - 17 * 4) / 18;
@@ -59,14 +62,14 @@ export function ActivityHeatmap({ notes, width }: ActivityHeatmapProps) {
                 height: cellSize,
                 backgroundColor: getColor(day.count),
               },
-              day.isToday && styles.today,
+              day.isToday && { borderWidth: 1, borderColor: colors.primaryDark },
             ]}
           />
         ))}
       </View>
       <View style={styles.labels}>
-        <Text style={styles.label}>{lastMonth}</Text>
-        <Text style={styles.label}>{currentMonth}</Text>
+        <Text style={[styles.label, { color: colors.textQuaternary }]}>{lastMonth}</Text>
+        <Text style={[styles.label, { color: colors.textQuaternary }]}>{currentMonth}</Text>
       </View>
     </View>
   );
@@ -85,10 +88,6 @@ const styles = StyleSheet.create({
   cell: {
     borderRadius: 2,
   },
-  today: {
-    borderWidth: 1,
-    borderColor: '#10b981',
-  },
   labels: {
     flexDirection: 'row',
     marginTop: 8,
@@ -97,6 +96,5 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: '#9CA3AF',
   },
 });

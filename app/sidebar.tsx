@@ -15,12 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { useNoteStore } from '../stores';
+import { useTheme } from '../hooks/useTheme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.85;
 
 export default function SidebarScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { notes, getStatistics, getAllTags, pinnedTags, togglePinTag, loadPinnedTags } = useNoteStore();
   const [stats, setStats] = useState({
@@ -92,7 +94,6 @@ export default function SidebarScreen() {
     transform: [{ translateX: translateX.value }],
   }));
 
-
   const menuItems = [
     {
       icon: 'grid',
@@ -127,7 +128,7 @@ export default function SidebarScreen() {
         activeOpacity={1}
       />
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.container, animatedStyle]}>
+        <Animated.View style={[styles.container, { backgroundColor: colors.surface }, animatedStyle]}>
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={[
@@ -137,28 +138,28 @@ export default function SidebarScreen() {
           >
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.logoText}>MING</Text>
+              <Text style={[styles.logoText, { color: colors.text }]}>MING</Text>
               <TouchableOpacity
                 style={styles.iconButton}
                 onPress={() => router.push('/settings')}
               >
-                <Ionicons name="settings-outline" size={22} color="#6B7280" />
+                <Ionicons name="settings-outline" size={22} color={colors.textTertiary} />
               </TouchableOpacity>
             </View>
 
             {/* Stats */}
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{stats.notes}</Text>
-                <Text style={styles.statLabel}>笔记</Text>
+                <Text style={[styles.statValue, { color: colors.text }]}>{stats.notes}</Text>
+                <Text style={[styles.statLabel, { color: colors.textQuaternary }]}>笔记</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{stats.tags}</Text>
-                <Text style={styles.statLabel}>标签</Text>
+                <Text style={[styles.statValue, { color: colors.text }]}>{stats.tags}</Text>
+                <Text style={[styles.statLabel, { color: colors.textQuaternary }]}>标签</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{stats.days}</Text>
-                <Text style={styles.statLabel}>天</Text>
+                <Text style={[styles.statValue, { color: colors.text }]}>{stats.days}</Text>
+                <Text style={[styles.statLabel, { color: colors.textQuaternary }]}>天</Text>
               </View>
             </View>
 
@@ -170,15 +171,15 @@ export default function SidebarScreen() {
               {menuItems.map((item, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={[styles.menuItem, item.isActive && styles.menuItemActive]}
+                  style={[styles.menuItem, item.isActive && { backgroundColor: colors.accent }]}
                   onPress={item.onPress}
                 >
                   <Ionicons
                     name={item.icon as any}
                     size={20}
-                    color={item.isActive ? '#FFFFFF' : '#1f2937'}
+                    color={item.isActive ? '#FFFFFF' : colors.text}
                   />
-                  <Text style={[styles.menuTitle, item.isActive && styles.menuTitleActive]}>
+                  <Text style={[styles.menuTitle, { color: item.isActive ? '#FFFFFF' : colors.text }]}>
                     {item.title}
                   </Text>
                 </TouchableOpacity>
@@ -189,7 +190,7 @@ export default function SidebarScreen() {
             {pinnedTags.length > 0 && (
               <>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>置顶标签</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.tan }]}>置顶标签</Text>
                 </View>
                 <View style={styles.tagList}>
                   {pinnedTags.map((tag, index) => (
@@ -206,9 +207,9 @@ export default function SidebarScreen() {
                         <MaterialCommunityIcons
                           name={getTagIcon(tag)}
                           size={18}
-                          color="#1f2937"
+                          color={colors.text}
                         />
-                        <Text style={styles.tagText}>{tag}</Text>
+                        <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={(e) => {
@@ -220,7 +221,7 @@ export default function SidebarScreen() {
                         }}
                         style={styles.moreButton}
                       >
-                        <Ionicons name="ellipsis-horizontal" size={18} color="#9CA3AF" />
+                        <Ionicons name="ellipsis-horizontal" size={18} color={colors.textQuaternary} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -232,7 +233,7 @@ export default function SidebarScreen() {
             {allTags.length > 0 && (
               <>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>全部标签</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.tan }]}>全部标签</Text>
                 </View>
                 <View style={styles.tagList}>
                   {allTags.map((tag, index) => {
@@ -250,9 +251,9 @@ export default function SidebarScreen() {
                           <MaterialCommunityIcons
                             name={getTagIcon(tag)}
                             size={18}
-                            color="#1f2937"
+                            color={colors.text}
                           />
-                          <Text style={styles.tagText}>{tag}</Text>
+                          <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={(e) => {
@@ -264,7 +265,7 @@ export default function SidebarScreen() {
                           }}
                           style={styles.moreButton}
                         >
-                          <Ionicons name="ellipsis-horizontal" size={18} color="#9CA3AF" />
+                          <Ionicons name="ellipsis-horizontal" size={18} color={colors.textQuaternary} />
                         </TouchableOpacity>
                       </View>
                     );
@@ -341,7 +342,6 @@ const styles = StyleSheet.create({
   container: {
     width: SIDEBAR_WIDTH,
     height: '100%',
-    backgroundColor: '#FFFFFF',
     overflow: 'hidden',
   },
   scrollContent: {},
@@ -355,7 +355,6 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#1f2937',
   },
   iconButton: {
     padding: 4,
@@ -371,11 +370,9 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1f2937',
   },
   statLabel: {
     fontSize: 12,
-    color: '#9CA3AF',
     marginTop: 4,
   },
   menuList: {
@@ -390,17 +387,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 4,
   },
-  menuItemActive: {
-    backgroundColor: '#2ecc71',
-  },
   menuTitle: {
     fontSize: 16,
-    color: '#1f2937',
     marginLeft: 12,
     fontWeight: '500',
-  },
-  menuTitleActive: {
-    color: '#FFFFFF',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -412,7 +402,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    color: '#D2B48C',
     fontWeight: '500',
   },
   tagList: {
@@ -432,7 +421,6 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 16,
-    color: '#1f2937',
     marginLeft: 12,
   },
   moreButton: {

@@ -14,10 +14,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NoteCard } from '../components/NoteCard';
 import { useNoteStore } from '../stores';
+import { useTheme } from '../hooks/useTheme';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { notes, loading, deleteNoteById } = useNoteStore();
+  const { colors } = useTheme();
 
   console.log('HomeScreen渲染, notes数量:', notes.length, 'loading:', loading);
 
@@ -59,19 +61,19 @@ export default function HomeScreen() {
   // 渲染空状态
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="document-text-outline" size={64} color="#9ca3af" />
-      <Text style={styles.emptyText}>还没有笔记</Text>
-      <Text style={styles.emptySubtext}>点击下方绿色按钮开始记录</Text>
+      <Ionicons name="document-text-outline" size={64} color={colors.textQuaternary} />
+      <Text style={[styles.emptyText, { color: colors.textQuaternary }]}>还没有笔记</Text>
+      <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>点击下方绿色按钮开始记录</Text>
     </View>
   );
 
   // 渲染加载状态
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#10b981" />
-          <Text style={styles.loadingText}>正在加载...</Text>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <View style={[styles.loadingContainer, { backgroundColor: colors.surface }]}>
+          <ActivityIndicator size="large" color={colors.primaryDark} />
+          <Text style={[styles.loadingText, { color: colors.textQuaternary }]}>正在加载...</Text>
         </View>
       </SafeAreaView>
     );
@@ -87,22 +89,22 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       {/* 顶部导航栏 - flomo 风格 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity
             style={styles.menuButton}
             onPress={handleSidebarOpen}
             activeOpacity={0.7}
           >
-            <Ionicons name="menu" size={24} color="#374151" />
+            <Ionicons name="menu" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
-          
+
           <View style={styles.titleContainer}>
-            <Text style={styles.headerTitle}>Getme</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Getme</Text>
           </View>
         </View>
 
@@ -111,12 +113,12 @@ export default function HomeScreen() {
           onPress={handleSearch}
           activeOpacity={0.7}
         >
-          <Ionicons name="search" size={24} color="#9ca3af" />
+          <Ionicons name="search" size={24} color={colors.textQuaternary} />
         </TouchableOpacity>
       </View>
 
       {/* 笔记列表 */}
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <FlatList
           data={notes}
           renderItem={renderNoteItem}
@@ -130,7 +132,7 @@ export default function HomeScreen() {
       {/* 底部浮动添加按钮 - 绿色圆角矩形 */}
       <View style={styles.fabContainer}>
         <TouchableOpacity
-          style={styles.fab}
+          style={[styles.fab, { backgroundColor: colors.primary, shadowColor: colors.primaryDark }]}
           onPress={handleAddNote}
           activeOpacity={0.9}
         >
@@ -144,7 +146,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   header: {
     flexDirection: 'row',
@@ -152,7 +153,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#f9fafb',
     borderBottomWidth: 0,
   },
   headerLeft: {
@@ -171,15 +171,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1f2937',
-    fontFamily: 'System', // 尝试使用系统字体
+    fontFamily: 'System',
   },
   searchButton: {
     padding: 4,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb', // 非常浅的灰色背景，区分卡片
   },
   listContent: {
     paddingVertical: 12,
@@ -194,27 +192,22 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#9ca3af',
     textAlign: 'center',
   },
   emptySubtext: {
     marginTop: 8,
     fontSize: 14,
-    color: '#d1d5db',
     textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#9ca3af',
   },
-  // FAB 样式调整
   fabContainer: {
     position: 'absolute',
     bottom: 30,
@@ -222,17 +215,15 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    pointerEvents: 'box-none', // 允许点击穿透到列表底部
+    pointerEvents: 'box-none',
   },
   fab: {
     width: 56,
     height: 56,
-    borderRadius: 16, // 圆角矩形
-    backgroundColor: '#34d399', // 鲜艳的绿色
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 4,
-    shadowColor: '#10b981',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

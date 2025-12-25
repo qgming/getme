@@ -14,9 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NoteCard } from '../components/NoteCard';
 import { Note } from '../types/Note';
 import { useNoteStore } from '../stores';
+import { useTheme } from '../hooks/useTheme';
 
 export default function TagNotesScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { tag } = useLocalSearchParams<{ tag: string }>();
   const { getNotesByTag, deleteNoteById } = useNoteStore();
   const [notes, setNotes] = useState<Note[]>([]);
@@ -57,29 +59,29 @@ export default function TagNotesScreen() {
 
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="pricetag-outline" size={64} color="#9ca3af" />
-      <Text style={styles.emptyText}>该标签下暂无笔记</Text>
+      <Ionicons name="pricetag-outline" size={64} color={colors.textQuaternary} />
+      <Text style={[styles.emptyText, { color: colors.textQuaternary }]}>该标签下暂无笔记</Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#374151" />
+          <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>#{tag}</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>#{tag}</Text>
         <View style={styles.placeholder} />
       </View>
 
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <FlatList
           data={notes}
           renderItem={renderNoteItem}
@@ -96,7 +98,6 @@ export default function TagNotesScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   header: {
     flexDirection: 'row',
@@ -104,7 +105,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#f9fafb',
   },
   backButton: {
     padding: 4,
@@ -112,7 +112,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1f2937',
     flex: 1,
     textAlign: 'center',
   },
@@ -121,7 +120,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   listContent: {
     paddingVertical: 12,
@@ -136,7 +134,6 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#9ca3af',
     textAlign: 'center',
   },
 });

@@ -5,6 +5,7 @@ import React, { useRef, useState } from 'react';
 import { Alert, GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Note, formatFullDateTime, getPreviewText } from '../types/Note';
 import { ActionItem, ActionMenu } from './ActionMenu';
+import { useTheme } from '../hooks/useTheme';
 
 interface NoteCardProps {
   note: Note;
@@ -14,6 +15,7 @@ interface NoteCardProps {
 
 export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) => {
   const router = useRouter();
+  const { colors } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const menuButtonRef = useRef<View>(null);
@@ -67,7 +69,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
   return (
     <>
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
         onPress={() => {
           console.log('NoteCard clicked, note ID:', note.id);
           onPress(note);
@@ -77,7 +79,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
       >
         {/* 顶部：创建时间 + 菜单按钮 */}
         <View style={styles.header}>
-          <Text style={styles.date}>
+          <Text style={[styles.date, { color: colors.textQuaternary }]}>
             {formatFullDateTime(note.createdAt)}
           </Text>
           <TouchableOpacity
@@ -87,14 +89,14 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
             activeOpacity={0.6}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="ellipsis-horizontal" size={16} color="#9ca3af" />
+            <Ionicons name="ellipsis-horizontal" size={16} color={colors.textQuaternary} />
           </TouchableOpacity>
         </View>
 
         {/* 中间：内容预览 */}
         <View style={styles.contentContainer}>
           <Text
-            style={styles.preview}
+            style={[styles.preview, { color: colors.textSecondary }]}
             numberOfLines={10}
             lineBreakMode="tail"
           >
@@ -109,7 +111,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
               return (
                 <TouchableOpacity
                   key={index}
-                  style={styles.tag}
+                  style={[styles.tag, { backgroundColor: colors.blueLight }]}
                   onPress={() => {
                     router.push({
                       pathname: '/tag-notes',
@@ -118,7 +120,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.tagText}>
+                  <Text style={[styles.tagText, { color: colors.blue }]}>
                     #{tag}
                   </Text>
                 </TouchableOpacity>
@@ -140,13 +142,11 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 16,
     marginVertical: 6,
     borderWidth: 1,
-    borderColor: '#f3f4f6', // 添加极浅的边框来平滑边缘
   },
   header: {
     flexDirection: 'row',
@@ -156,7 +156,6 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 13,
-    color: '#9ca3af', // 浅灰色日期
     fontWeight: '400',
   },
   menuButton: {
@@ -172,11 +171,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
-    backgroundColor: '#eff6ff', // 浅蓝色背景
   },
   tagText: {
     fontSize: 13,
-    color: '#3b82f6', // 蓝色文字
     fontWeight: '500',
   },
   contentContainer: {
@@ -184,8 +181,7 @@ const styles = StyleSheet.create({
   },
   preview: {
     fontSize: 16,
-    color: '#374151', // 深灰色内容
-    lineHeight: 26, // 增加行高，提升阅读体验
+    lineHeight: 26,
     letterSpacing: 0.3,
   },
 });

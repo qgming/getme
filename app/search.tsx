@@ -15,9 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NoteCard } from '../components/NoteCard';
 import { useNoteStore } from '../stores';
 import { Note } from '../types/Note';
+import { useTheme } from '../hooks/useTheme';
 
 export default function SearchScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { searchNotesByQuery, deleteNoteById } = useNoteStore();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,9 +91,9 @@ export default function SearchScreen() {
     if (!searchQuery.trim()) {
       return (
         <View style={styles.emptyContainer}>
-          <Ionicons name="search" size={64} color="#d1d5db" />
-          <Text style={styles.emptyText}>输入关键词搜索笔记</Text>
-          <Text style={styles.emptySubtext}>支持搜索内容和标签</Text>
+          <Ionicons name="search" size={64} color={colors.textMuted} />
+          <Text style={[styles.emptyText, { color: colors.textTertiary }]}>输入关键词搜索笔记</Text>
+          <Text style={[styles.emptySubtext, { color: colors.textQuaternary }]}>支持搜索内容和标签</Text>
         </View>
       );
     }
@@ -99,16 +101,16 @@ export default function SearchScreen() {
     if (isSearching) {
       return (
         <View style={styles.emptyContainer}>
-          <Text style={styles.searchingText}>搜索中...</Text>
+          <Text style={[styles.searchingText, { color: colors.textQuaternary }]}>搜索中...</Text>
         </View>
       );
     }
 
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="document-text-outline" size={64} color="#d1d5db" />
-        <Text style={styles.emptyText}>未找到匹配的笔记</Text>
-        <Text style={styles.emptySubtext}>试试其他关键词</Text>
+        <Ionicons name="document-text-outline" size={64} color={colors.textMuted} />
+        <Text style={[styles.emptyText, { color: colors.textTertiary }]}>未找到匹配的笔记</Text>
+        <Text style={[styles.emptySubtext, { color: colors.textQuaternary }]}>试试其他关键词</Text>
       </View>
     );
   };
@@ -119,7 +121,7 @@ export default function SearchScreen() {
 
     return (
       <View style={styles.statsContainer}>
-        <Text style={styles.statsText}>
+        <Text style={[styles.statsText, { color: colors.textTertiary }]}>
           找到 {searchResults.length} 个结果
         </Text>
       </View>
@@ -127,33 +129,33 @@ export default function SearchScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       {/* 顶部搜索栏 */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#374151" />
+          <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        <View style={styles.searchInputContainer}>
+        <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Ionicons
             name="search"
             size={20}
-            color="#9ca3af"
+            color={colors.textQuaternary}
             style={styles.searchIcon}
           />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="搜索笔记..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
             autoCorrect={false}
             autoFocus
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.textQuaternary}
             returnKeyType="search"
             onSubmitEditing={() => Keyboard.dismiss()}
           />
@@ -163,14 +165,14 @@ export default function SearchScreen() {
               onPress={() => setSearchQuery('')}
               activeOpacity={0.7}
             >
-              <Ionicons name="close-circle" size={20} color="#9ca3af" />
+              <Ionicons name="close-circle" size={20} color={colors.textQuaternary} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       {/* 搜索结果列表 */}
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {renderSearchStats()}
         <FlatList
           data={searchResults}
@@ -188,14 +190,12 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#f9fafb',
     gap: 12,
   },
   backButton: {
@@ -205,12 +205,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     paddingHorizontal: 14,
     height: 44,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
   },
   searchIcon: {
     marginRight: 10,
@@ -218,14 +216,12 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1f2937',
   },
   clearButton: {
     padding: 2,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   statsContainer: {
     paddingHorizontal: 16,
@@ -233,7 +229,6 @@ const styles = StyleSheet.create({
   },
   statsText: {
     fontSize: 13,
-    color: '#6b7280',
   },
   listContent: {
     paddingVertical: 12,
@@ -248,17 +243,14 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#6b7280',
     textAlign: 'center',
   },
   emptySubtext: {
     marginTop: 8,
     fontSize: 14,
-    color: '#9ca3af',
     textAlign: 'center',
   },
   searchingText: {
     fontSize: 16,
-    color: '#9ca3af',
   },
 });

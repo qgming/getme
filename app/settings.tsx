@@ -12,9 +12,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
 import { useThemeStore } from '../stores';
+import { useTheme } from '../hooks/useTheme';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { themeMode, setThemeMode, loadThemeMode } = useThemeStore();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -32,20 +34,20 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#374151" />
+          <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>设置</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>设置</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
         <TouchableOpacity
-          style={styles.card}
+          style={[styles.card, { backgroundColor: colors.surface }]}
           onPress={(e) => {
             e.currentTarget.measure((x, y, width, height, pageX, pageY) => {
               setMenuAnchor({ x: pageX + width, y: pageY + height / 2 });
@@ -54,12 +56,12 @@ export default function SettingsScreen() {
           }}
         >
           <View style={styles.cardLeft}>
-            <Ionicons name="color-palette-outline" size={22} color="#1f2937" />
-            <Text style={styles.cardTitle}>主题模式</Text>
+            <Ionicons name="color-palette-outline" size={22} color={colors.text} />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>主题模式</Text>
           </View>
           <View style={styles.cardRight}>
-            <Text style={styles.cardValue}>{getThemeLabel()}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <Text style={[styles.cardValue, { color: colors.textQuaternary }]}>{getThemeLabel()}</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textQuaternary} />
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -96,7 +98,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   header: {
     flexDirection: 'row',
@@ -104,7 +105,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#f9fafb',
   },
   backButton: {
     padding: 4,
@@ -112,7 +112,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1f2937',
   },
   placeholder: {
     width: 32,
@@ -125,7 +124,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
     marginBottom: 12,
     padding: 16,
@@ -137,7 +135,6 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    color: '#1f2937',
     marginLeft: 12,
   },
   cardRight: {
@@ -146,7 +143,6 @@ const styles = StyleSheet.create({
   },
   cardValue: {
     fontSize: 14,
-    color: '#9CA3AF',
     marginRight: 4,
   },
 });

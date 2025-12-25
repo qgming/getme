@@ -19,9 +19,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionItem, ActionMenu } from '../components/ActionMenu';
 import { useNoteStore } from '../stores';
 import { formatFullDateTime, Note, validateNote } from '../types/Note';
+import { useTheme } from '../hooks/useTheme';
 
 export default function NoteEditorScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const params = useLocalSearchParams();
   const noteStore = useNoteStore();
   const { createNote, updateNote, deleteNoteById } = noteStore;
@@ -276,24 +278,24 @@ export default function NoteEditorScreen() {
     const showSaveButton = contentChanged || tagsChanged;
 
     return (
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={showSaveButton ? handleManualSave : handleBack}
           activeOpacity={0.7}
         >
           {showSaveButton ? (
-            <Ionicons name="checkmark" size={28} color="#10b981" />
+            <Ionicons name="checkmark" size={28} color={colors.primaryDark} />
           ) : (
-            <Ionicons name="chevron-back" size={28} color="#9ca3af" />
+            <Ionicons name="chevron-back" size={28} color={colors.textQuaternary} />
           )}
         </TouchableOpacity>
 
         <View style={styles.headerRight}>
-          {isSaving && <ActivityIndicator size="small" color="#6366f1" style={{ marginRight: 8 }} />}
+          {isSaving && <ActivityIndicator size="small" color={colors.blue} style={{ marginRight: 8 }} />}
           <View ref={menuButtonRef}>
             <TouchableOpacity style={styles.headerButton} onPress={handleShowMenu}>
-              <Ionicons name="ellipsis-horizontal" size={24} color="#9ca3af" />
+              <Ionicons name="ellipsis-horizontal" size={24} color={colors.textQuaternary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -303,7 +305,7 @@ export default function NoteEditorScreen() {
 
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -312,12 +314,12 @@ export default function NoteEditorScreen() {
 
         <ScrollView
           ref={scrollViewRef}
-          style={styles.contentContainer}
+          style={[styles.contentContainer, { backgroundColor: colors.surface }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scrollContent}
         >
-          <Text style={styles.dateText}>{formatFullDateTime(createdAt)}</Text>
+          <Text style={[styles.dateText, { color: colors.textMuted }]}>{formatFullDateTime(createdAt)}</Text>
 
           {/* 标签区域 */}
           {tags.length > 0 && (
@@ -325,12 +327,12 @@ export default function NoteEditorScreen() {
               {tags.map((tag, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={styles.tag}
+                  style={[styles.tag, { backgroundColor: colors.blueLight }]}
                   onPress={() => handleRemoveTag(tag)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.tagText}>#{tag}</Text>
-                  <Ionicons name="close-circle" size={14} color="#3b82f6" style={styles.tagClose} />
+                  <Text style={[styles.tagText, { color: colors.blue }]}>#{tag}</Text>
+                  <Ionicons name="close-circle" size={14} color={colors.blue} style={styles.tagClose} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -338,25 +340,25 @@ export default function NoteEditorScreen() {
 
           <TextInput
             ref={textInputRef}
-            style={styles.contentInput}
+            style={[styles.contentInput, { color: colors.textSecondary }]}
             placeholder="输入内容..."
             value={content}
             onChangeText={handleContentChange}
             multiline
             textAlignVertical="top"
-            placeholderTextColor="#d1d5db"
+            placeholderTextColor={colors.textMuted}
             autoFocus={true}
           />
         </ScrollView>
 
         {/* 底部工具栏 */}
-        <View style={styles.toolbar}>
+        <View style={[styles.toolbar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
           <TouchableOpacity
-            style={styles.toolbarButton}
+            style={[styles.toolbarButton, { backgroundColor: colors.surface }]}
             onPress={() => setTagModalVisible(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="pricetag-outline" size={22} color="#6366f1" />
+            <Ionicons name="pricetag-outline" size={22} color={colors.blue} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -380,29 +382,29 @@ export default function NoteEditorScreen() {
           activeOpacity={1}
           onPress={() => setTagModalVisible(false)}
         >
-          <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
-            <Text style={styles.modalTitle}>添加标签</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]} onStartShouldSetResponder={() => true}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>添加标签</Text>
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, { borderColor: colors.textMuted, color: colors.textSecondary }]}
               placeholder="输入标签名称"
               value={tagInput}
               onChangeText={setTagInput}
               autoFocus
               onSubmitEditing={handleAddTag}
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.textQuaternary}
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
+                style={[styles.modalButton, styles.modalButtonCancel, { backgroundColor: colors.surfaceSecondary }]}
                 onPress={() => {
                   setTagInput('');
                   setTagModalVisible(false);
                 }}
               >
-                <Text style={styles.modalButtonTextCancel}>取消</Text>
+                <Text style={[styles.modalButtonTextCancel, { color: colors.textTertiary }]}>取消</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
+                style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: colors.blue }]}
                 onPress={handleAddTag}
               >
                 <Text style={styles.modalButtonTextConfirm}>添加</Text>
@@ -418,7 +420,6 @@ export default function NoteEditorScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   container: {
     flex: 1,
@@ -435,7 +436,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 8,
     paddingVertical: 8,
-    backgroundColor: '#f9fafb',
   },
   headerRight: {
     flexDirection: 'row',
@@ -446,11 +446,9 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
   dateText: {
     fontSize: 14,
-    color: '#d1d5db',
     marginBottom: 4,
     marginTop: 12,
     paddingHorizontal: 20,
@@ -458,7 +456,6 @@ const styles = StyleSheet.create({
   contentInput: {
     fontSize: 18,
     lineHeight: 26,
-    color: '#374151',
     minHeight: 200,
     paddingHorizontal: 18,
   },
@@ -475,32 +472,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
-    backgroundColor: '#eff6ff',
     gap: 4,
   },
   tagText: {
     fontSize: 13,
-    color: '#3b82f6',
     fontWeight: '500',
   },
   tagClose: {
     marginLeft: 2,
   },
-  toolbarSafeArea: {
-    backgroundColor: '#f9fafb',
-  },
+  toolbarSafeArea: {},
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 4,
-    backgroundColor: '#f9fafb',
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
   },
   toolbarButton: {
     padding: 6,
-    backgroundColor: '#ffffff',
     borderRadius: 8,
   },
   modalOverlay: {
@@ -510,7 +500,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 20,
     width: '80%',
@@ -519,17 +508,14 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1f2937',
     marginBottom: 16,
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-    color: '#374151',
     marginBottom: 16,
   },
   modalButtons: {
@@ -542,16 +528,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  modalButtonCancel: {
-    backgroundColor: '#f3f4f6',
-  },
-  modalButtonConfirm: {
-    backgroundColor: '#6366f1',
-  },
+  modalButtonCancel: {},
+  modalButtonConfirm: {},
   modalButtonTextCancel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#6b7280',
   },
   modalButtonTextConfirm: {
     fontSize: 16,

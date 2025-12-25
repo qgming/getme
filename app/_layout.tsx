@@ -1,19 +1,31 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Appearance } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useNoteStore } from '../stores';
+import { useNoteStore, useThemeStore } from '../stores';
 
 export default function RootLayout() {
   const initialize = useNoteStore(state => state.initialize);
+  const loadThemeMode = useThemeStore(state => state.loadThemeMode);
+  const updateColorScheme = useThemeStore(state => state.updateColorScheme);
+  const colorScheme = useThemeStore(state => state.colorScheme);
 
-  // 初始化应用
   useEffect(() => {
     initialize();
-  }, [initialize]);
+    loadThemeMode();
+  }, [initialize, loadThemeMode]);
+
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(() => {
+      updateColorScheme();
+    });
+    return () => subscription.remove();
+  }, [updateColorScheme]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen

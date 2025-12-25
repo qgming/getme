@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 export interface ActionItem {
   label: string;
@@ -18,9 +19,9 @@ interface ActionMenuProps {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MENU_WIDTH = 180;
-const MENU_ITEM_HEIGHT = 48; // 每个菜单项的高度
-const MENU_PADDING = 8; // 菜单内边距
-const SCREEN_EDGE_PADDING = 10; // 距离屏幕边缘的最小距离
+const MENU_ITEM_HEIGHT = 48;
+const MENU_PADDING = 8;
+const SCREEN_EDGE_PADDING = 10;
 
 export const ActionMenu: React.FC<ActionMenuProps> = ({
   visible,
@@ -28,6 +29,8 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
   anchorPosition,
   actions,
 }) => {
+  const { colors } = useTheme();
+
   if (!anchorPosition) return null;
 
   // 计算菜单实际高度
@@ -86,6 +89,8 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             {
               top: top,
               left: left,
+              backgroundColor: colors.surface,
+              borderColor: colors.borderLight,
             },
           ]}
         >
@@ -100,17 +105,17 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                 action.onPress();
                 onClose();
               }}
-              android_ripple={{ color: '#f3f4f6' }}
+              android_ripple={{ color: colors.surfaceSecondary }}
             >
               <Ionicons
                 name={action.icon}
                 size={18}
-                color={action.isDestructive ? '#ef4444' : '#374151'}
+                color={action.isDestructive ? colors.red : colors.textSecondary}
               />
               <Text
                 style={[
                   styles.menuText,
-                  action.isDestructive && styles.deleteText,
+                  { color: action.isDestructive ? colors.red : colors.textSecondary },
                 ]}
               >
                 {action.label}
@@ -129,7 +134,6 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     position: 'absolute',
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 4,
     width: MENU_WIDTH,
@@ -139,7 +143,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
     borderWidth: 1,
-    borderColor: '#f3f4f6',
   },
   menuItem: {
     flexDirection: 'row',
@@ -148,16 +151,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 10,
   },
-  borderTop: {
-    // borderTopWidth: 1,
-    // borderTopColor: '#f3f4f6',
-  },
+  borderTop: {},
   menuText: {
     fontSize: 15,
-    color: '#374151',
     fontWeight: '500',
-  },
-  deleteText: {
-    color: '#ef4444',
   },
 });
