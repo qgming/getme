@@ -26,7 +26,7 @@ export default function NoteEditorScreen() {
   const { colors } = useTheme();
   const params = useLocalSearchParams();
   const noteStore = useNoteStore();
-  const { createNote, updateNote, deleteNoteById } = noteStore;
+  const { createNote, updateNoteSilently, deleteNoteById } = noteStore;
 
   const [content, setContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
@@ -35,7 +35,7 @@ export default function NoteEditorScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [noteId, setNoteId] = useState<string | null>(null);
   const [createdAt, setCreatedAt] = useState<string>(new Date().toISOString());
-  
+
   const [menuVisible, setMenuVisible] = useState(false);
   const [anchorPosition, setAnchorPosition] = useState<{ x: number; y: number } | null>(null);
   const menuButtonRef = useRef<View>(null);
@@ -46,6 +46,9 @@ export default function NoteEditorScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const textInputRef = useRef<TextInput>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSavingRef = useRef(false);
+  const contentRef = useRef('');
+  const tagsRef = useRef<string[]>([]);
 
   // 简化的键盘处理：当键盘显示时自动滚动到底部
   useEffect(() => {
@@ -81,6 +84,8 @@ export default function NoteEditorScreen() {
 
           if (note) {
             console.log('成功加载笔记，设置内容:', note.content.substring(0, 50));
+            contentRef.current = note.content;
+            tagsRef.current = note.tags || [];
             setContent(note.content);
             setOriginalContent(note.content);
             setTags(note.tags || []);
@@ -108,12 +113,12 @@ export default function NoteEditorScreen() {
 
   // 处理保存
   const handleSave = useCallback(async (showFeedback = true) => {
-    if (!content.trim()) return;
+    if (!contentRef.current.trim()) return;
 
     const noteData = {
       id: noteId || undefined,
-      content: content.trim(),
-      tags: tags,
+      content: contentRef.current.trim(),
+      tags: tagsRef.current,
     };
 
     const validation = validateNote(noteData);
@@ -122,6 +127,7 @@ export default function NoteEditorScreen() {
       return;
     }
 
+    isSavingRef.current = true;
     setIsSaving(true);
 
     try {
@@ -133,7 +139,7 @@ export default function NoteEditorScreen() {
           createdAt: createdAt,
           updatedAt: new Date().toISOString(),
         };
-        await updateNote(existingNote);
+        await updateNoteSilently(existingNote);
       } else {
         // 创建新笔记
         const savedNote = await createNote(noteData);
@@ -142,8 +148,8 @@ export default function NoteEditorScreen() {
       }
 
       // 保存成功后更新原始内容，标记为无变化
-      setOriginalContent(content.trim());
-      setOriginalTags(tags);
+      setOriginalContent(contentRef.current.trim());
+      setOriginalTags(tagsRef.current);
 
       if (showFeedback) {
         Alert.alert('成功', '笔记已保存');
@@ -152,23 +158,24 @@ export default function NoteEditorScreen() {
       console.error('保存失败:', error);
       if (showFeedback) Alert.alert('错误', '保存失败，请重试');
     } finally {
+      isSavingRef.current = false;
       setIsSaving(false);
     }
-  }, [content, tags, noteId, createdAt, updateNote, createNote]);
+  }, [noteId, createdAt, updateNoteSilently, createNote]);
 
   // 标签变化时立即保存
   useEffect(() => {
-    if (JSON.stringify(tags) !== JSON.stringify(originalTags) && content.trim()) {
+    if (JSON.stringify(tagsRef.current) !== JSON.stringify(originalTags) && contentRef.current.trim()) {
       handleSave(false);
     }
-  }, [tags, originalTags, content, handleSave]);
+  }, [tags, originalTags, handleSave]);
 
   // 内容变化后延迟自动保存
   useEffect(() => {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
-    if (content.trim() && content.trim() !== originalContent.trim()) {
+    if (contentRef.current.trim() && contentRef.current.trim() !== originalContent.trim()) {
       autoSaveTimerRef.current = setTimeout(() => {
         handleSave(false);
       }, 2000);
@@ -180,19 +187,13 @@ export default function NoteEditorScreen() {
     };
   }, [content, originalContent, handleSave]);
 
-  // 退出页面时保存
-  useEffect(() => {
-    return () => {
-      if (content.trim() && (content.trim() !== originalContent.trim() || JSON.stringify(tags) !== JSON.stringify(originalTags))) {
-        handleSave(false);
-      }
-    };
-  }, [content, tags, originalContent, originalTags, handleSave]);
 
   // 处理返回
-  const handleBack = async () => {
-    if (content.trim() && (content.trim() !== originalContent.trim() || JSON.stringify(tags) !== JSON.stringify(originalTags)) && !isSaving) {
-      await handleSave(false);
+  const handleBack = () => {
+    const hasContentChange = contentRef.current.trim() !== originalContent.trim();
+    const hasTagsChange = JSON.stringify(tagsRef.current) !== JSON.stringify(originalTags);
+    if (contentRef.current.trim() && (hasContentChange || hasTagsChange) && !isSavingRef.current) {
+      handleSave(false);
     }
     router.back();
   };
@@ -248,19 +249,22 @@ export default function NoteEditorScreen() {
   const handleManualSave = async () => {
     const contentChanged = content.trim() !== originalContent.trim();
     const tagsChanged = JSON.stringify(tags) !== JSON.stringify(originalTags);
-    if (!(contentChanged || tagsChanged) || isSaving) return;
+    if (!(contentChanged || tagsChanged) || isSavingRef.current) return;
     await handleSave(false);
   };
 
   // 处理内容变化
   const handleContentChange = (text: string) => {
+    contentRef.current = text;
     setContent(text);
   };
 
   // 处理添加标签
   const handleAddTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
+      const newTags = [...tags, tagInput.trim()];
+      tagsRef.current = newTags;
+      setTags(newTags);
     }
     setTagInput('');
     setTagModalVisible(false);
@@ -268,7 +272,9 @@ export default function NoteEditorScreen() {
 
   // 处理删除标签
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    const newTags = tags.filter(tag => tag !== tagToRemove);
+    tagsRef.current = newTags;
+    setTags(newTags);
   };
 
   // 渲染头部

@@ -29,6 +29,7 @@ interface NoteState {
   refreshNotes: () => Promise<void>;
   createNote: (note: Partial<Note>) => Promise<Note>;
   updateNote: (note: Note) => Promise<Note>;
+  updateNoteSilently: (note: Note) => Promise<Note>;
   deleteNoteById: (id: string) => Promise<void>;
   searchNotesByQuery: (query: string) => Promise<Note[]>;
   getStatistics: () => Promise<{ totalNotes: number; monthlyNotes: number; taggedNotes: number }>;
@@ -131,6 +132,23 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       return updatedNote;
     } catch (error) {
       console.error('更新笔记失败:', error);
+      throw error;
+    }
+  },
+
+  // 静默更新笔记（不触发状态更新，用于自动保存）
+  updateNoteSilently: async (note: Note): Promise<Note> => {
+    try {
+      const updatedNote = await saveNote(note);
+      // 直接更新内存中的笔记，不触发订阅者更新
+      const state = get();
+      const index = state.notes.findIndex(n => n.id === note.id);
+      if (index !== -1) {
+        state.notes[index] = updatedNote;
+      }
+      return updatedNote;
+    } catch (error) {
+      console.error('静默更新笔记失败:', error);
       throw error;
     }
   },

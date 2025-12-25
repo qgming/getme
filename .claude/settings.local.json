@@ -17,7 +17,9 @@
       "Bash(npx expo start --help:*)",
       "Bash(python3:*)",
       "Bash(dir:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git mv:*)",
+      "Bash(move \"d:\\\\dev\\\\reactnative\\\\getme\\\\app\\\\ai-insights.tsx\" \"d:\\\\dev\\\\reactnative\\\\getme\\\\app\\\\\\(tabs\\)\\\\ai-insights.tsx\")"
     ]
   }
 }

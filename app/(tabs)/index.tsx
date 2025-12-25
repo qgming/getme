@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,16 +12,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { NoteCard } from '../components/NoteCard';
-import { Sidebar } from '../components/Sidebar';
-import { useNoteStore } from '../stores';
-import { useTheme } from '../hooks/useTheme';
+import { NoteCard } from '../../components/NoteCard';
+import { useNoteStore } from '../../stores';
+import { useTheme } from '../../hooks/useTheme';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { notes, loading, deleteNoteById } = useNoteStore();
   const { colors } = useTheme();
-  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   console.log('HomeScreen渲染, notes数量:', notes.length, 'loading:', loading);
 
@@ -32,16 +30,6 @@ export default function HomeScreen() {
       pathname: '/note-editor',
       params: { noteId: note.id },
     } as any);
-  };
-
-  // 处理添加新笔记
-  const handleAddNote = () => {
-    router.navigate('/note-editor' as any);
-  };
-
-  // 处理侧边栏按钮点击
-  const handleSidebarOpen = () => {
-    setSidebarVisible(true);
   };
 
   // 处理搜索按钮点击
@@ -96,18 +84,8 @@ export default function HomeScreen() {
 
       {/* 顶部导航栏 - flomo 风格 */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={handleSidebarOpen}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="menu" size={24} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <View style={styles.titleContainer}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Getme</Text>
-          </View>
+        <View style={styles.titleContainer}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Getme</Text>
         </View>
 
         <TouchableOpacity
@@ -130,20 +108,6 @@ export default function HomeScreen() {
           ListEmptyComponent={renderEmptyComponent}
         />
       </View>
-
-      {/* 底部浮动添加按钮 - 绿色圆角矩形 */}
-      <View style={styles.fabContainer}>
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.primary, shadowColor: colors.primaryDark }]}
-          onPress={handleAddNote}
-          activeOpacity={0.9}
-        >
-          <Ionicons name="add" size={36} color="white" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Sidebar */}
-      <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -159,14 +123,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 0,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  menuButton: {
-    padding: 4,
   },
   titleContainer: {
     flexDirection: 'row',
@@ -212,25 +168,5 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-  },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'box-none',
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
 });

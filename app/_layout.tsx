@@ -27,7 +27,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="note-editor"
           options={{
@@ -44,13 +44,6 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="tag-notes"
-          options={{
-            headerShown: false,
-            animation: 'none'
-          }}
-        />
-        <Stack.Screen
-          name="settings"
           options={{
             headerShown: false,
             animation: 'none'

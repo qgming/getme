@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
@@ -10,12 +9,11 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActionMenu } from '../components/ActionMenu';
-import { useThemeStore } from '../stores';
-import { useTheme } from '../hooks/useTheme';
+import { ActionMenu } from '../../components/ActionMenu';
+import { useThemeStore } from '../../stores';
+import { useTheme } from '../../hooks/useTheme';
 
 export default function SettingsScreen() {
-  const router = useRouter();
   const { colors } = useTheme();
   const { themeMode, setThemeMode, loadThemeMode } = useThemeStore();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
@@ -38,11 +36,7 @@ export default function SettingsScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
-        </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>设置</Text>
-        <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content}>
@@ -100,21 +94,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  backButton: {
-    padding: 4,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  placeholder: {
-    width: 32,
+    textAlign: 'center',
   },
   content: {
     flex: 1,
