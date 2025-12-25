@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NoteCard } from '../components/NoteCard';
+import { Sidebar } from '../components/Sidebar';
 import { useNoteStore } from '../stores';
 import { useTheme } from '../hooks/useTheme';
 
@@ -20,6 +21,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { notes, loading, deleteNoteById } = useNoteStore();
   const { colors } = useTheme();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   console.log('HomeScreen渲染, notes数量:', notes.length, 'loading:', loading);
 
@@ -39,7 +41,7 @@ export default function HomeScreen() {
 
   // 处理侧边栏按钮点击
   const handleSidebarOpen = () => {
-    router.navigate('/sidebar' as any);
+    setSidebarVisible(true);
   };
 
   // 处理搜索按钮点击
@@ -139,6 +141,9 @@ export default function HomeScreen() {
           <Ionicons name="add" size={36} color="white" />
         </TouchableOpacity>
       </View>
+
+      {/* Sidebar */}
+      <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
     </SafeAreaView>
   );
 }

@@ -32,35 +32,28 @@ export default function RootLayout() {
           name="note-editor"
           options={{
             headerShown: false,
-            animation: 'slide_from_bottom'
+            animation: 'none'
           }}
         />
         <Stack.Screen
           name="search"
           options={{
             headerShown: false,
-            animation: 'slide_from_right'
-          }}
-        />
-        <Stack.Screen
-          name="sidebar"
-          options={{
-            headerShown: false,
-            animation: 'slide_from_left'
+            animation: 'none'
           }}
         />
         <Stack.Screen
           name="tag-notes"
           options={{
             headerShown: false,
-            animation: 'slide_from_right'
+            animation: 'none'
           }}
         />
         <Stack.Screen
           name="settings"
           options={{
             headerShown: false,
-            animation: 'slide_from_right'
+            animation: 'none'
           }}
         />
       </Stack>

@@ -6,7 +6,6 @@ import {
   Alert,
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -17,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionItem, ActionMenu } from '../components/ActionMenu';
+import { DialogInput } from '../components/DialogInput';
 import { useNoteStore } from '../stores';
 import { formatFullDateTime, Note, validateNote } from '../types/Note';
 import { useTheme } from '../hooks/useTheme';
@@ -370,49 +370,18 @@ export default function NoteEditorScreen() {
         actions={menuActions}
       />
 
-      {/* 标签添加弹窗 */}
-      <Modal
+      <DialogInput
         visible={tagModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setTagModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setTagModalVisible(false)}
-        >
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]} onStartShouldSetResponder={() => true}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>添加标签</Text>
-            <TextInput
-              style={[styles.modalInput, { borderColor: colors.textMuted, color: colors.textSecondary }]}
-              placeholder="输入标签名称"
-              value={tagInput}
-              onChangeText={setTagInput}
-              autoFocus
-              onSubmitEditing={handleAddTag}
-              placeholderTextColor={colors.textQuaternary}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel, { backgroundColor: colors.surfaceSecondary }]}
-                onPress={() => {
-                  setTagInput('');
-                  setTagModalVisible(false);
-                }}
-              >
-                <Text style={[styles.modalButtonTextCancel, { color: colors.textTertiary }]}>取消</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: colors.blue }]}
-                onPress={handleAddTag}
-              >
-                <Text style={styles.modalButtonTextConfirm}>添加</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        title="添加标签"
+        value={tagInput}
+        onChangeText={setTagInput}
+        onCancel={() => {
+          setTagInput('');
+          setTagModalVisible(false);
+        }}
+        onConfirm={handleAddTag}
+        placeholder="输入标签名称"
+      />
     </SafeAreaView>
   );
 }
@@ -492,51 +461,5 @@ const styles = StyleSheet.create({
   toolbarButton: {
     padding: 6,
     borderRadius: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    borderRadius: 12,
-    padding: 20,
-    width: '80%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    marginBottom: 16,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalButtonCancel: {},
-  modalButtonConfirm: {},
-  modalButtonTextCancel: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalButtonTextConfirm: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 });

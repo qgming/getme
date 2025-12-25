@@ -20,7 +20,9 @@ import { useTheme } from '../hooks/useTheme';
 export default function SearchScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { searchNotesByQuery, deleteNoteById } = useNoteStore();
+  const searchNotesByQuery = useNoteStore(state => state.searchNotesByQuery);
+  const deleteNoteById = useNoteStore(state => state.deleteNoteById);
+  const allNotes = useNoteStore(state => state.notes);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Note[]>([]);
@@ -49,7 +51,7 @@ export default function SearchScreen() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, searchNotesByQuery]);
+  }, [searchQuery, searchNotesByQuery, allNotes]);
 
   // 处理返回
   const handleBack = () => {

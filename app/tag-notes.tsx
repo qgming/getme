@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Alert,
   FlatList,
@@ -20,15 +20,9 @@ export default function TagNotesScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { tag } = useLocalSearchParams<{ tag: string }>();
-  const { getNotesByTag, deleteNoteById } = useNoteStore();
-  const [notes, setNotes] = useState<Note[]>([]);
-
-  useEffect(() => {
-    if (tag) {
-      const filteredNotes = getNotesByTag(tag);
-      setNotes(filteredNotes);
-    }
-  }, [tag, getNotesByTag]);
+  const deleteNoteById = useNoteStore(state => state.deleteNoteById);
+  const allNotes = useNoteStore(state => state.notes);
+  const notes = allNotes.filter(n => n.tags?.includes(tag));
 
   const handleNotePress = (note: Note) => {
     router.navigate({
@@ -40,8 +34,6 @@ export default function TagNotesScreen() {
   const handleDeleteNote = async (noteId: string) => {
     try {
       await deleteNoteById(noteId);
-      const filteredNotes = getNotesByTag(tag);
-      setNotes(filteredNotes);
       Alert.alert('成功', '笔记已删除');
     } catch (error) {
       console.error('删除失败:', error);

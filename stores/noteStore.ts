@@ -43,6 +43,11 @@ interface NoteState {
   // 标签置顶
   togglePinTag: (tag: string) => Promise<void>;
   loadPinnedTags: () => Promise<void>;
+
+  // 标签管理
+  renameTag: (oldTag: string, newTag: string) => Promise<void>;
+  deleteTag: (tag: string) => Promise<void>;
+  deleteTagWithNotes: (tag: string) => Promise<void>;
 }
 
 // 创建 Zustand store
@@ -268,6 +273,92 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       set({ pinnedTags: newPinnedTags });
     } catch (error) {
       console.error('切换标签置顶失败:', error);
+    }
+  },
+
+  // 重命名标签
+  renameTag: async (oldTag: string, newTag: string) => {
+    try {
+      const notes = get().notes;
+      const notesToUpdate = notes.filter(note => note.tags?.includes(oldTag));
+
+      for (const note of notesToUpdate) {
+        const updatedNote = {
+          ...note,
+          tags: note.tags!.map(t => t === oldTag ? newTag : t)
+        };
+        await saveNote(updatedNote);
+      }
+
+      const pinnedTags = get().pinnedTags;
+      if (pinnedTags.includes(oldTag)) {
+        const newPinnedTags = pinnedTags.map(t => t === oldTag ? newTag : t);
+        await AsyncStorage.setItem('pinnedTags', JSON.stringify(newPinnedTags));
+        set({ pinnedTags: newPinnedTags });
+      }
+
+      await get().refreshNotes();
+    } catch (error) {
+      console.error('重命名标签失败:', error);
+      throw error;
+    }
+  },
+
+  // 仅删除标签
+  deleteTag: async (tag: string) => {
+    try {
+      const notes = get().notes;
+      const updatedNotes = notes.map(note => {
+        if (note.tags?.includes(tag)) {
+          return {
+            ...note,
+            tags: note.tags.filter(t => t !== tag)
+          };
+        }
+        return note;
+      });
+
+      for (const note of updatedNotes) {
+        if (notes.find(n => n.id === note.id)?.tags?.includes(tag)) {
+          await saveNote(note);
+        }
+      }
+
+      const pinnedTags = get().pinnedTags;
+      if (pinnedTags.includes(tag)) {
+        const newPinnedTags = pinnedTags.filter(t => t !== tag);
+        await AsyncStorage.setItem('pinnedTags', JSON.stringify(newPinnedTags));
+        set({ pinnedTags: newPinnedTags });
+      }
+
+      await get().refreshNotes();
+    } catch (error) {
+      console.error('删除标签失败:', error);
+      throw error;
+    }
+  },
+
+  // 删除标签和笔记
+  deleteTagWithNotes: async (tag: string) => {
+    try {
+      const notes = get().notes;
+      const notesToDelete = notes.filter(note => note.tags?.includes(tag));
+
+      for (const note of notesToDelete) {
+        await deleteNote(note.id);
+      }
+
+      const pinnedTags = get().pinnedTags;
+      if (pinnedTags.includes(tag)) {
+        const newPinnedTags = pinnedTags.filter(t => t !== tag);
+        await AsyncStorage.setItem('pinnedTags', JSON.stringify(newPinnedTags));
+        set({ pinnedTags: newPinnedTags });
+      }
+
+      await get().refreshNotes();
+    } catch (error) {
+      console.error('删除标签和笔记失败:', error);
+      throw error;
     }
   },
 }));
