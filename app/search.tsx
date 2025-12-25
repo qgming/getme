@@ -135,14 +135,14 @@ export default function SearchScreen() {
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#1f2937" />
+          <Ionicons name="arrow-back" size={24} color="#374151" />
         </TouchableOpacity>
 
         <View style={styles.searchInputContainer}>
           <Ionicons
             name="search"
-            size={18}
-            color="#6b7280"
+            size={20}
+            color="#9ca3af"
             style={styles.searchIcon}
           />
           <TextInput
@@ -152,22 +152,21 @@ export default function SearchScreen() {
             onChangeText={setSearchQuery}
             autoCapitalize="none"
             autoCorrect={false}
-            clearButtonMode="while-editing"
+            autoFocus
             placeholderTextColor="#9ca3af"
             returnKeyType="search"
             onSubmitEditing={() => Keyboard.dismiss()}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => setSearchQuery('')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close-circle" size={20} color="#9ca3af" />
+            </TouchableOpacity>
+          )}
         </View>
-
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => setSearchQuery('')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="close-circle" size={20} color="#6b7280" />
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* 搜索结果列表 */}
@@ -196,32 +195,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    backgroundColor: '#f9fafb',
+    gap: 12,
   },
   backButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-    marginRight: 12,
+    padding: 4,
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     height: 44,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
@@ -229,8 +221,7 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
   clearButton: {
-    marginLeft: 8,
-    padding: 4,
+    padding: 2,
   },
   container: {
     flex: 1,
@@ -238,32 +229,27 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    paddingVertical: 10,
   },
   statsText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#6b7280',
-    fontWeight: '500',
   },
   listContent: {
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 40,
-    marginTop: 40,
+    marginTop: 60,
   },
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#4b5563',
+    color: '#6b7280',
     textAlign: 'center',
-    fontWeight: '500',
   },
   emptySubtext: {
     marginTop: 8,
@@ -273,6 +259,6 @@ const styles = StyleSheet.create({
   },
   searchingText: {
     fontSize: 16,
-    color: '#6b7280',
+    color: '#9ca3af',
   },
 });

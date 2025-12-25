@@ -13,6 +13,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
+import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { useNoteStore } from '../stores';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -21,7 +22,7 @@ const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.85;
 export default function SidebarScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { getStatistics, getAllTags, pinnedTags, togglePinTag, loadPinnedTags } = useNoteStore();
+  const { notes, getStatistics, getAllTags, pinnedTags, togglePinTag, loadPinnedTags } = useNoteStore();
   const [stats, setStats] = useState({
     notes: 0,
     tags: 0,
@@ -91,32 +92,6 @@ export default function SidebarScreen() {
     transform: [{ translateX: translateX.value }],
   }));
 
-  const renderActivityGraph = () => {
-    const rows = 7;
-    const cols = 18;
-    const cells = [];
-    for (let i = 0; i < rows * cols; i++) {
-      cells.push(
-        <View
-          key={i}
-          style={[
-            styles.graphCell,
-            i === rows * cols - 1 && styles.graphCellToday,
-          ]}
-        />
-      );
-    }
-
-    return (
-      <View style={styles.graphContainer}>
-        <View style={styles.graphGrid}>{cells}</View>
-        <View style={styles.graphLabels}>
-          <Text style={styles.graphLabel}>11月</Text>
-          <Text style={styles.graphLabel}>12月</Text>
-        </View>
-      </View>
-    );
-  };
 
   const menuItems = [
     {
@@ -162,21 +137,13 @@ export default function SidebarScreen() {
           >
             {/* Header */}
             <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <Text style={styles.logoText}>MING</Text>
-                <View style={styles.proBadge}>
-                  <Ionicons name="flash" size={10} color="#D97706" />
-                  <Text style={styles.proText}>升级PRO</Text>
-                </View>
-              </View>
-              <View style={styles.headerRight}>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Ionicons name="notifications-outline" size={22} color="#6B7280" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Ionicons name="settings-outline" size={22} color="#6B7280" />
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.logoText}>MING</Text>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => router.push('/settings')}
+              >
+                <Ionicons name="settings-outline" size={22} color="#6B7280" />
+              </TouchableOpacity>
             </View>
 
             {/* Stats */}
@@ -196,7 +163,7 @@ export default function SidebarScreen() {
             </View>
 
             {/* Activity Graph */}
-            {renderActivityGraph()}
+            <ActivityHeatmap notes={notes} width={SIDEBAR_WIDTH} />
 
             {/* Main Menu */}
             <View style={styles.menuList}>
@@ -227,19 +194,27 @@ export default function SidebarScreen() {
                 <View style={styles.tagList}>
                   {pinnedTags.map((tag, index) => (
                     <View key={`pinned-${index}`} style={styles.tagItem}>
-                      <View style={styles.tagLeft}>
-                        <MaterialCommunityIcons 
-                          name={getTagIcon(tag)} 
-                          size={18} 
-                          color="#1f2937" 
+                      <TouchableOpacity
+                        style={styles.tagLeft}
+                        onPress={() => {
+                          router.push({
+                            pathname: '/tag-notes',
+                            params: { tag },
+                          } as any);
+                        }}
+                      >
+                        <MaterialCommunityIcons
+                          name={getTagIcon(tag)}
+                          size={18}
+                          color="#1f2937"
                         />
                         <Text style={styles.tagText}>{tag}</Text>
-                      </View>
+                      </TouchableOpacity>
                       <TouchableOpacity
                         onPress={(e) => {
-                          e.currentTarget.measure((x, y, width, height, pageX, pageY) => {
+                          e.currentTarget.measure((x, y, _width, height, pageX, pageY) => {
                             setSelectedTag(tag);
-                            setMenuAnchor({ x: pageX + width, y: pageY + height / 2 });
+                            setMenuAnchor({ x: pageX, y: pageY + height });
                             setShowActionMenu(true);
                           });
                         }}
@@ -263,19 +238,27 @@ export default function SidebarScreen() {
                   {allTags.map((tag, index) => {
                     return (
                       <View key={index} style={styles.tagItem}>
-                        <View style={styles.tagLeft}>
-                          <MaterialCommunityIcons 
-                            name={getTagIcon(tag)} 
-                            size={18} 
-                            color="#1f2937" 
+                        <TouchableOpacity
+                          style={styles.tagLeft}
+                          onPress={() => {
+                            router.push({
+                              pathname: '/tag-notes',
+                              params: { tag },
+                            } as any);
+                          }}
+                        >
+                          <MaterialCommunityIcons
+                            name={getTagIcon(tag)}
+                            size={18}
+                            color="#1f2937"
                           />
                           <Text style={styles.tagText}>{tag}</Text>
-                        </View>
+                        </TouchableOpacity>
                         <TouchableOpacity
                           onPress={(e) => {
-                            e.currentTarget.measure((x, y, width, height, pageX, pageY) => {
+                            e.currentTarget.measure((x, y, _width, height, pageX, pageY) => {
                               setSelectedTag(tag);
-                              setMenuAnchor({ x: pageX + width, y: pageY + height / 2 });
+                              setMenuAnchor({ x: pageX, y: pageY + height });
                               setShowActionMenu(true);
                             });
                           }}
@@ -369,35 +352,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 10,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   logoText: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginRight: 8,
-  },
-  proBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  proText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#D97706',
-    marginLeft: 2,
-  },
-  headerRight: {
-    flexDirection: 'row',
   },
   iconButton: {
-    marginLeft: 15,
+    padding: 4,
   },
   statsRow: {
     flexDirection: 'row',
@@ -416,37 +377,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
     marginTop: 4,
-  },
-  graphContainer: {
-    paddingHorizontal: 20,
-    marginTop: 25,
-  },
-  graphGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    width: '100%',
-    gap: 4,
-  },
-  graphCell: {
-    width: (SIDEBAR_WIDTH - 40 - 17 * 4) / 18,
-    height: (SIDEBAR_WIDTH - 40 - 17 * 4) / 18,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 2,
-  },
-  graphCellToday: {
-    borderWidth: 1,
-    borderColor: '#10b981',
-    backgroundColor: '#ecfdf5',
-  },
-  graphLabels: {
-    flexDirection: 'row',
-    marginTop: 8,
-    justifyContent: 'space-around',
-    paddingRight: 20,
-  },
-  graphLabel: {
-    fontSize: 12,
-    color: '#9CA3AF',
   },
   menuList: {
     paddingHorizontal: 12,

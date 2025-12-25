@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Note, formatFullDateTime, getPreviewText } from '../types/Note';
@@ -12,6 +13,7 @@ interface NoteCardProps {
 }
 
 export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) => {
+  const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const menuButtonRef = useRef<View>(null);
@@ -104,16 +106,22 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
         {note.tags && note.tags.length > 0 && (
           <View style={styles.tagContainer}>
             {note.tags.map((tag, index) => {
-              // 统一使用浅蓝色风格，模仿 flomo
               return (
-                <View
+                <TouchableOpacity
                   key={index}
                   style={styles.tag}
+                  onPress={() => {
+                    router.push({
+                      pathname: '/tag-notes',
+                      params: { tag },
+                    } as any);
+                  }}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.tagText}>
                     #{tag}
                   </Text>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>

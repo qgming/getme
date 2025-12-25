@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Dimensions, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 export interface ActionItem {
   label: string;
@@ -18,6 +18,9 @@ interface ActionMenuProps {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MENU_WIDTH = 180;
+const MENU_ITEM_HEIGHT = 48; // 每个菜单项的高度
+const MENU_PADDING = 8; // 菜单内边距
+const SCREEN_EDGE_PADDING = 10; // 距离屏幕边缘的最小距离
 
 export const ActionMenu: React.FC<ActionMenuProps> = ({
   visible,
@@ -27,14 +30,44 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 }) => {
   if (!anchorPosition) return null;
 
-  // 计算菜单位置，防止超出屏幕边界
-  let top = anchorPosition.y;
-  let left = anchorPosition.x - MENU_WIDTH + 20; // 默认显示在点击位置左侧一点
+  // 计算菜单实际高度
+  const menuHeight = actions.length * MENU_ITEM_HEIGHT + MENU_PADDING * 2;
 
-  // 边界检查
-  if (left < 10) left = 10;
-  if (left + MENU_WIDTH > SCREEN_WIDTH - 10) left = SCREEN_WIDTH - MENU_WIDTH - 10;
-  if (top + 100 > SCREEN_HEIGHT - 50) top = anchorPosition.y - 100; // 如果太靠下，向上显示
+  // 智能判断垂直位置：优先显示在触发点下方，如果空间不足则显示在上方
+  let top = anchorPosition.y;
+  const spaceBelow = SCREEN_HEIGHT - anchorPosition.y;
+  const spaceAbove = anchorPosition.y;
+
+  if (spaceBelow >= menuHeight + SCREEN_EDGE_PADDING) {
+    // 下方空间充足，显示在触发点下方
+    top = anchorPosition.y;
+  } else if (spaceAbove >= menuHeight + SCREEN_EDGE_PADDING) {
+    // 下方空间不足但上方空间充足，显示在触发点上方
+    top = anchorPosition.y - menuHeight;
+  } else {
+    // 上下空间都不足，选择空间较大的一侧，并调整到安全位置
+    if (spaceBelow > spaceAbove) {
+      top = SCREEN_HEIGHT - menuHeight - SCREEN_EDGE_PADDING;
+    } else {
+      top = SCREEN_EDGE_PADDING;
+    }
+  }
+
+  // 智能判断水平位置：默认显示在触发点左侧，如果空间不足则显示在右侧
+  let left = anchorPosition.x - MENU_WIDTH + 20;
+
+  // 水平边界检查
+  if (left < SCREEN_EDGE_PADDING) {
+    // 左侧空间不足，尝试显示在触发点右侧
+    left = anchorPosition.x - 20;
+    // 如果右侧也超出，则贴近右边缘
+    if (left + MENU_WIDTH > SCREEN_WIDTH - SCREEN_EDGE_PADDING) {
+      left = SCREEN_WIDTH - MENU_WIDTH - SCREEN_EDGE_PADDING;
+    }
+  } else if (left + MENU_WIDTH > SCREEN_WIDTH - SCREEN_EDGE_PADDING) {
+    // 右侧超出，贴近右边缘
+    left = SCREEN_WIDTH - MENU_WIDTH - SCREEN_EDGE_PADDING;
+  }
 
   return (
     <Modal
@@ -43,9 +76,8 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableOpacity
+      <Pressable
         style={styles.modalOverlay}
-        activeOpacity={1}
         onPress={onClose}
       >
         <View
@@ -86,7 +118,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             </Pressable>
           ))}
         </View>
-      </TouchableOpacity>
+      </Pressable>
     </Modal>
   );
 };
@@ -94,7 +126,6 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'transparent', // 改为透明，或者极淡的颜色
   },
   menuContainer: {
     position: 'absolute',
