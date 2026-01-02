@@ -7,11 +7,11 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NoteCard } from '../components/NoteCard';
+import { CustomHeader } from '../components/CustomHeader';
 import { Note } from '../types/Note';
 import { useNoteStore } from '../stores';
 import { useTheme } from '../hooks/useTheme';
@@ -60,18 +60,7 @@ export default function TagNotesScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
-        </TouchableOpacity>
-
-        <Text style={[styles.headerTitle, { color: colors.text }]}>#{tag}</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <CustomHeader title={`#${tag}`} showBackButton backToHome />
 
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <FlatList
@@ -90,25 +79,6 @@ export default function TagNotesScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 32,
   },
   container: {
     flex: 1,

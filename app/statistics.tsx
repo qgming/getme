@@ -12,18 +12,27 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActionMenu } from '../../components/ActionMenu';
-import { ActivityHeatmap } from '../../components/ActivityHeatmap';
-import { DialogInput } from '../../components/DialogInput';
-import { useNoteStore } from '../../stores';
-import { useTheme } from '../../hooks/useTheme';
+import { ActionMenu } from '../components/ActionMenu';
+import { ActivityHeatmap } from '../components/ActivityHeatmap';
+import { DialogInput } from '../components/DialogInput';
+import { CustomHeader } from '../components/CustomHeader';
+import { useNoteStore } from '../stores';
+import { useTheme } from '../hooks/useTheme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function DataStatisticsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { notes, getStatistics, getAllTags, pinnedTags, togglePinTag, loadPinnedTags, renameTag, deleteTag, deleteTagWithNotes } = useNoteStore();
+  const notes = useNoteStore(state => state.notes);
+  const getStatistics = useNoteStore(state => state.getStatistics);
+  const getAllTags = useNoteStore(state => state.getAllTags);
+  const pinnedTags = useNoteStore(state => state.pinnedTags);
+  const togglePinTag = useNoteStore(state => state.togglePinTag);
+  const loadPinnedTags = useNoteStore(state => state.loadPinnedTags);
+  const renameTag = useNoteStore(state => state.renameTag);
+  const deleteTag = useNoteStore(state => state.deleteTag);
+  const deleteTagWithNotes = useNoteStore(state => state.deleteTagWithNotes);
   const [stats, setStats] = useState({
     notes: 0,
     tags: 0,
@@ -81,9 +90,7 @@ export default function DataStatisticsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>数据统计</Text>
-      </View>
+      <CustomHeader title="数据统计" showBackButton backToHome />
 
       <ScrollView
         style={styles.container}
@@ -301,15 +308,6 @@ export default function DataStatisticsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
   container: {
     flex: 1,

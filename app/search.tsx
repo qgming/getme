@@ -139,7 +139,7 @@ export default function SearchScreen() {
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>

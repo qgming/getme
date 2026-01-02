@@ -287,15 +287,24 @@ export default function NoteEditorScreen() {
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={showSaveButton ? handleManualSave : handleBack}
+          onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          {showSaveButton ? (
-            <Ionicons name="checkmark" size={28} color={colors.primaryDark} />
-          ) : (
-            <Ionicons name="chevron-back" size={28} color={colors.textQuaternary} />
-          )}
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
+
+        <View style={styles.headerCenter}>
+          {showSaveButton && (
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: colors.primaryDark }]}
+              onPress={handleManualSave}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="checkmark" size={20} color="white" />
+              <Text style={styles.saveButtonText}>保存</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         <View style={styles.headerRight}>
           {isSaving && <ActivityIndicator size="small" color={colors.blue} style={{ marginRight: 8 }} />}
@@ -411,6 +420,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 8,
     paddingVertical: 8,
+    height: 56,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '600',
   },
   headerRight: {
     flexDirection: 'row',

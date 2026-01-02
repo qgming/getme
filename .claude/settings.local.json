@@ -19,7 +19,10 @@
       "Bash(dir:*)",
       "Bash(git checkout:*)",
       "Bash(git mv:*)",
-      "Bash(move \"d:\\\\dev\\\\reactnative\\\\getme\\\\app\\\\ai-insights.tsx\" \"d:\\\\dev\\\\reactnative\\\\getme\\\\app\\\\\\(tabs\\)\\\\ai-insights.tsx\")"
+      "Bash(move \"d:\\\\dev\\\\reactnative\\\\getme\\\\app\\\\ai-insights.tsx\" \"d:\\\\dev\\\\reactnative\\\\getme\\\\app\\\\\\(tabs\\)\\\\ai-insights.tsx\")",
+      "Bash(move:*)",
+      "Bash(if exist \"app\\\\\\(tabs\\)\" rmdir \"app\\\\\\(tabs\\)\")",
+      "Bash(find:*)"
     ]
   }
 }

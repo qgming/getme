@@ -26,31 +26,20 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="note-editor"
-          options={{
-            headerShown: false,
-            animation: 'none'
-          }}
-        />
-        <Stack.Screen
-          name="search"
-          options={{
-            headerShown: false,
-            animation: 'none'
-          }}
-        />
-        <Stack.Screen
-          name="tag-notes"
-          options={{
-            headerShown: false,
-            animation: 'none'
-          }}
-        />
+      <Stack
+        screenOptions={{
+          animation: 'slide_from_right',
+          animationDuration: 200,
+        }}
+      >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="ai-insights" options={{ headerShown: false }} />
+        <Stack.Screen name="statistics" options={{ headerShown: false }} />
+        <Stack.Screen name="settings" options={{ headerShown: false }} />
+        <Stack.Screen name="note-editor" options={{ headerShown: false }} />
+        <Stack.Screen name="search" options={{ headerShown: false }} />
+        <Stack.Screen name="tag-notes" options={{ headerShown: false }} />
       </Stack>
-      <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
 }

@@ -6,7 +6,6 @@ import { Alert, GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View 
 import { Note, formatFullDateTime, getPreviewText } from '../types/Note';
 import { ActionItem, ActionMenu } from './ActionMenu';
 import { useTheme } from '../hooks/useTheme';
-import { useNoteStore } from '../stores';
 
 interface NoteCardProps {
   note: Note;
@@ -14,10 +13,9 @@ interface NoteCardProps {
   onDelete: (noteId: string) => void;
 }
 
-export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) => {
+const NoteCardComponent: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) => {
   const router = useRouter();
   const { colors } = useTheme();
-  const currentNote = useNoteStore(state => state.notes.find(n => n.id === note.id)) || note;
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const menuButtonRef = useRef<View>(null);
@@ -41,7 +39,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
   // 处理复制
   const handleCopy = async () => {
     try {
-      await Clipboard.setStringAsync(currentNote.content);
+      await Clipboard.setStringAsync(note.content);
       Alert.alert('成功', '笔记内容已复制到剪贴板');
     } catch {
       Alert.alert('错误', '复制失败，请重试');
@@ -72,17 +70,14 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
     <>
       <TouchableOpacity
         style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-        onPress={() => {
-          console.log('NoteCard clicked, note ID:', currentNote.id);
-          onPress(currentNote);
-        }}
+        onPress={() => onPress(note)}
         onLongPress={handleMenuPress}
         activeOpacity={0.8}
       >
         {/* 顶部：创建时间 + 菜单按钮 */}
         <View style={styles.header}>
           <Text style={[styles.date, { color: colors.textQuaternary }]}>
-            {formatFullDateTime(currentNote.createdAt)}
+            {formatFullDateTime(note.createdAt)}
           </Text>
           <TouchableOpacity
             ref={menuButtonRef}
@@ -102,14 +97,14 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
             numberOfLines={10}
             lineBreakMode="tail"
           >
-            {getPreviewText(currentNote.content, 500)}
+            {getPreviewText(note.content, 500)}
           </Text>
         </View>
 
         {/* 底部：标签栏 (如果有) */}
-        {currentNote.tags && currentNote.tags.length > 0 && (
+        {note.tags && note.tags.length > 0 && (
           <View style={styles.tagContainer}>
-            {currentNote.tags.map((tag, index) => {
+            {note.tags.map((tag, index) => {
               return (
                 <TouchableOpacity
                   key={index}
@@ -141,6 +136,17 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onPress, onDelete }) =
     </>
   );
 };
+
+// 使用 React.memo 优化性能，避免不必要的重新渲染
+export const NoteCard = React.memo(NoteCardComponent, (prevProps, nextProps) => {
+  // 只有当 note 的关键属性发生变化时才重新渲染
+  return (
+    prevProps.note.id === nextProps.note.id &&
+    prevProps.note.content === nextProps.note.content &&
+    prevProps.note.createdAt === nextProps.note.createdAt &&
+    JSON.stringify(prevProps.note.tags) === JSON.stringify(nextProps.note.tags)
+  );
+});
 
 const styles = StyleSheet.create({
   card: {

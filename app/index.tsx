@@ -12,20 +12,19 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { NoteCard } from '../../components/NoteCard';
-import { useNoteStore } from '../../stores';
-import { useTheme } from '../../hooks/useTheme';
+import { NoteCard } from '../components/NoteCard';
+import { useNoteStore } from '../stores';
+import { useTheme } from '../hooks/useTheme';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { notes, loading, deleteNoteById } = useNoteStore();
+  const notes = useNoteStore(state => state.notes);
+  const loading = useNoteStore(state => state.loading);
+  const deleteNoteById = useNoteStore(state => state.deleteNoteById);
   const { colors } = useTheme();
-
-  console.log('HomeScreen渲染, notes数量:', notes.length, 'loading:', loading);
 
   // 处理笔记点击
   const handleNotePress = (note: any) => {
-    console.log('点击笔记:', note.id, note.content.substring(0, 50));
     router.navigate({
       pathname: '/note-editor',
       params: { noteId: note.id },
@@ -69,6 +68,27 @@ export default function HomeScreen() {
     );
   }
 
+  // 渲染顶部按钮
+  const renderHeader = () => (
+    <View style={styles.topButtons}>
+      <TouchableOpacity
+        style={[styles.topButton, { backgroundColor: colors.surface }]}
+        onPress={() => router.push('/ai-insights' as any)}
+      >
+        <Ionicons name="sparkles-outline" size={20} color={colors.text} />
+        <Text style={[styles.topButtonText, { color: colors.text }]}>AI 洞察</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.topButton, { backgroundColor: colors.surface }]}
+        onPress={() => router.push('/statistics' as any)}
+      >
+        <Ionicons name="airplane-outline" size={20} color={colors.text} />
+        <Text style={[styles.topButtonText, { color: colors.text }]}>每日回顾</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   // 渲染笔记列表项
   const renderNoteItem = ({ item }: { item: any }) => (
     <NoteCard
@@ -82,32 +102,39 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      {/* 顶部导航栏 - flomo 风格 */}
+      {/* 顶部导航栏 */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
+        <TouchableOpacity onPress={() => router.push('/settings' as any)} style={styles.iconButton}>
+          <Ionicons name="menu" size={24} color={colors.text} />
+        </TouchableOpacity>
+
         <View style={styles.titleContainer}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Getme</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={handleSearch}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="search" size={24} color={colors.textQuaternary} />
+        <TouchableOpacity onPress={handleSearch} style={styles.iconButton}>
+          <Ionicons name="search" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 
       {/* 笔记列表 */}
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <FlatList
-          data={notes}
-          renderItem={renderNoteItem}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={renderEmptyComponent}
-        />
-      </View>
+      <FlatList
+        data={notes}
+        renderItem={renderNoteItem}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmptyComponent}
+      />
+
+      {/* 浮动添加按钮 */}
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: '#10b981' }]}
+        onPress={() => router.push('/note-editor' as any)}
+      >
+        <Ionicons name="add" size={28} color="white" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -122,7 +149,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 0,
   },
   titleContainer: {
     flexDirection: 'row',
@@ -131,20 +157,36 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    fontFamily: 'System',
+    fontWeight: '600',
   },
-  searchButton: {
+  iconButton: {
     padding: 4,
   },
-  container: {
+  topButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 6,
+    gap: 12,
+  },
+  topButton: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  topButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
   },
   listContent: {
-    paddingVertical: 12,
+    paddingBottom: 80,
   },
   emptyContainer: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 40,
@@ -168,5 +210,20 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
 });

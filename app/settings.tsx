@@ -9,13 +9,16 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActionMenu } from '../../components/ActionMenu';
-import { useThemeStore } from '../../stores';
-import { useTheme } from '../../hooks/useTheme';
+import { ActionMenu } from '../components/ActionMenu';
+import { CustomHeader } from '../components/CustomHeader';
+import { useThemeStore } from '../stores';
+import { useTheme } from '../hooks/useTheme';
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
-  const { themeMode, setThemeMode, loadThemeMode } = useThemeStore();
+  const themeMode = useThemeStore(state => state.themeMode);
+  const setThemeMode = useThemeStore(state => state.setThemeMode);
+  const loadThemeMode = useThemeStore(state => state.loadThemeMode);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
 
@@ -35,9 +38,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>设置</Text>
-      </View>
+      <CustomHeader title="设置" showBackButton />
 
       <ScrollView style={styles.content}>
         <TouchableOpacity
@@ -92,15 +93,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
   content: {
     flex: 1,
