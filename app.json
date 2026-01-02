@@ -11,7 +11,8 @@
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.qgming.getme"
     },
     "web": {
       "output": "static"
@@ -23,6 +24,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e378138d-a0f1-4310-9b44-e4dc3a00c4f5"
+      }
+    },
+    "owner": "qgming"
   }
 }
