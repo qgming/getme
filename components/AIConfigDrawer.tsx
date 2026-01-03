@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   ScrollView,
@@ -10,26 +10,47 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as LobeIcons from '@lobehub/icons-rn';
 import { useTheme } from '../hooks/useTheme';
+import { AIProvider } from '../stores/aiStore';
+import { IconPickerDrawer } from './IconPickerDrawer';
 
-interface AIConfigModalProps {
+interface AIConfigDrawerProps {
   visible: boolean;
   onClose: () => void;
-  onConfirm: (config: { name: string; apiKey: string; baseUrl: string }) => void;
+  onConfirm: (config: { name: string; apiKey: string; baseUrl: string; iconName?: string }) => void;
+  editProvider?: AIProvider;
 }
 
-export function AIConfigModal({ visible, onClose, onConfirm }: AIConfigModalProps) {
+export function AIConfigDrawer({ visible, onClose, onConfirm, editProvider }: AIConfigDrawerProps) {
   const { colors } = useTheme();
   const [name, setName] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
+  const [iconName, setIconName] = useState<string | undefined>();
+  const [showIconPicker, setShowIconPicker] = useState(false);
 
-  const handleConfirm = () => {
-    if (name.trim() && apiKey.trim() && baseUrl.trim()) {
-      onConfirm({ name, apiKey, baseUrl });
+  useEffect(() => {
+    if (editProvider) {
+      setName(editProvider.name);
+      setApiKey(editProvider.apiKey);
+      setBaseUrl(editProvider.baseUrl);
+      setIconName(editProvider.iconName);
+    } else {
       setName('');
       setApiKey('');
       setBaseUrl('');
+      setIconName(undefined);
+    }
+  }, [editProvider, visible]);
+
+  const handleConfirm = () => {
+    if (name.trim() && apiKey.trim() && baseUrl.trim()) {
+      onConfirm({ name, apiKey, baseUrl, iconName });
+      setName('');
+      setApiKey('');
+      setBaseUrl('');
+      setIconName(undefined);
     }
   };
 
@@ -37,8 +58,11 @@ export function AIConfigModal({ visible, onClose, onConfirm }: AIConfigModalProp
     setName('');
     setApiKey('');
     setBaseUrl('');
+    setIconName(undefined);
     onClose();
   };
+
+  const IconComponent = iconName ? (LobeIcons as any)[iconName] : null;
 
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent>
@@ -47,13 +71,35 @@ export function AIConfigModal({ visible, onClose, onConfirm }: AIConfigModalProp
           <TouchableWithoutFeedback>
             <View style={[styles.container, { backgroundColor: colors.surface }]}>
               <View style={styles.header}>
-                <Text style={[styles.title, { color: colors.text }]}>添加AI配置</Text>
+                <Text style={[styles.title, { color: colors.text }]}>
+                  {editProvider ? '编辑AI配置' : '添加AI配置'}
+                </Text>
                 <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                   <Ionicons name="close" size={24} color={colors.text} />
                 </TouchableOpacity>
               </View>
 
               <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>图标</Text>
+                  <TouchableOpacity
+                    style={[styles.iconSelector, { backgroundColor: colors.background, borderColor: colors.border }]}
+                    onPress={() => setShowIconPicker(true)}
+                  >
+                    <View style={styles.iconPreview}>
+                      {IconComponent?.Avatar ? (
+                        <IconComponent.Avatar size={24} />
+                      ) : (
+                        <Ionicons name="sparkles" size={24} color={colors.textSecondary} />
+                      )}
+                      <Text style={[styles.iconText, { color: colors.text }]}>
+                        {iconName || '选择图标'}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
                 <View style={styles.inputGroup}>
                   <Text style={[styles.label, { color: colors.textSecondary }]}>名称</Text>
                   <TextInput
@@ -126,6 +172,13 @@ export function AIConfigModal({ visible, onClose, onConfirm }: AIConfigModalProp
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
+
+      <IconPickerDrawer
+        visible={showIconPicker}
+        onClose={() => setShowIconPicker(false)}
+        onSelect={setIconName}
+        selectedIcon={iconName}
+      />
     </Modal>
   );
 }
@@ -171,6 +224,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
+    fontSize: 16,
+  },
+  iconSelector: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  iconPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconText: {
     fontSize: 16,
   },
   buttons: {

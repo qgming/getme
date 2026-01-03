@@ -60,7 +60,7 @@ export default function TagNotesScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      <CustomHeader title={`#${tag}`} showBackButton backToHome />
+      <CustomHeader title={`#${tag}`} showBackButton />
 
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <FlatList

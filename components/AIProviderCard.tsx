@@ -9,11 +9,12 @@ import { ActionItem, ActionMenu } from './ActionMenu';
 
 interface AIProviderCardProps {
   provider: AIProvider;
-  onSetDefault: () => void;
+  onToggle: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
-export function AIProviderCard({ provider, onSetDefault, onDelete }: AIProviderCardProps) {
+export function AIProviderCard({ provider, onToggle, onEdit, onDelete }: AIProviderCardProps) {
   const { colors } = useTheme();
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
@@ -32,11 +33,19 @@ export function AIProviderCard({ provider, onSetDefault, onDelete }: AIProviderC
 
   const menuActions: ActionItem[] = [
     {
-      label: '设为默认',
-      icon: 'checkmark-circle-outline',
+      label: provider.isEnabled ? '停用' : '启用',
+      icon: provider.isEnabled ? 'close-circle-outline' : 'checkmark-circle-outline',
       onPress: () => {
         setShowMenu(false);
-        onSetDefault();
+        onToggle();
+      },
+    },
+    {
+      label: '编辑',
+      icon: 'create-outline',
+      onPress: () => {
+        setShowMenu(false);
+        onEdit();
       },
     },
     ...(!isBuiltIn ? [{
@@ -59,14 +68,17 @@ export function AIProviderCard({ provider, onSetDefault, onDelete }: AIProviderC
       >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View style={[styles.iconContainer, { backgroundColor: colors.accent + '20' }]}>
-              {IconComponent ? (
-                <IconComponent size={24} />
-              ) : (
-                <Ionicons name="sparkles" size={20} color={colors.accent} />
-              )}
-            </View>
+            {IconComponent?.Avatar ? (
+              <IconComponent.Avatar size={30} />
+            ) : (
+              <Ionicons name="sparkles" size={30} color={colors.accent} />
+            )}
             <Text style={[styles.name, { color: colors.text }]}>{provider.name}</Text>
+            {provider.isEnabled && (
+              <View style={[styles.enabledBadge, { backgroundColor: colors.accent }]}>
+                <Text style={styles.enabledText}>已启用</Text>
+              </View>
+            )}
           </View>
           <TouchableOpacity
             onPress={handleMorePress}
@@ -120,25 +132,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   name: {
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 12,
   },
-  defaultBadge: {
+  enabledBadge: {
     marginLeft: 8,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
-  defaultText: {
+  enabledText: {
     fontSize: 11,
     fontWeight: '600',
     color: '#FFFFFF',

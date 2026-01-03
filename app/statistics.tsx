@@ -90,7 +90,7 @@ export default function DataStatisticsScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      <CustomHeader title="数据统计" showBackButton backToHome />
+      <CustomHeader title="数据统计" showBackButton />
 
       <ScrollView
         style={styles.container}

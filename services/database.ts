@@ -35,6 +35,45 @@ export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
           tags TEXT
         );
       `);
+
+      await dbInstance.runAsync(`
+        CREATE TABLE IF NOT EXISTS ai_providers (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          apiKey TEXT NOT NULL,
+          baseUrl TEXT NOT NULL,
+          isEnabled INTEGER DEFAULT 1,
+          iconName TEXT,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL
+        );
+      `);
+
+      // 迁移：将 isDefault 列重命名为 isEnabled
+      const columns = await dbInstance.getAllAsync<{ name: string }>(
+        "PRAGMA table_info(ai_providers)"
+      );
+      const hasIsDefault = columns.some(col => col.name === 'isDefault');
+      const hasIsEnabled = columns.some(col => col.name === 'isEnabled');
+
+      if (hasIsDefault && !hasIsEnabled) {
+        await dbInstance.runAsync(`
+          ALTER TABLE ai_providers RENAME COLUMN isDefault TO isEnabled;
+        `);
+        await dbInstance.runAsync(`
+          UPDATE ai_providers SET isEnabled = 1;
+        `);
+      }
+
+      await dbInstance.runAsync(`
+        CREATE TABLE IF NOT EXISTS ai_models (
+          id TEXT PRIMARY KEY,
+          providerId TEXT NOT NULL,
+          name TEXT NOT NULL,
+          createdAt TEXT NOT NULL,
+          FOREIGN KEY (providerId) REFERENCES ai_providers(id) ON DELETE CASCADE
+        );
+      `);
       console.log('数据库表创建完成');
 
       return dbInstance;

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomHeader } from '../components/CustomHeader';
-import { AIConfigModal } from '../components/AIConfigModal';
+import { AIConfigDrawer } from '../components/AIConfigDrawer';
 import { AIProviderCard } from '../components/AIProviderCard';
 import { useTheme } from '../hooks/useTheme';
 import { useAIStore } from '../stores/aiStore';
@@ -18,15 +18,26 @@ import { useAIStore } from '../stores/aiStore';
 export default function AISettingsScreen() {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
-  const { providers, addProvider, deleteProvider, setDefaultProvider, loadProviders } = useAIStore();
+  const [editingProvider, setEditingProvider] = useState<any>(null);
+  const { providers, addProvider, updateProvider, deleteProvider, toggleProvider, loadProviders } = useAIStore();
 
   useEffect(() => {
     loadProviders();
-  }, []);
+  }, [loadProviders]);
 
-  const handleAddProvider = (config: { name: string; apiKey: string; baseUrl: string }) => {
-    addProvider(config);
+  const handleSaveProvider = async (config: { name: string; apiKey: string; baseUrl: string; iconName?: string }) => {
+    if (editingProvider) {
+      await updateProvider(editingProvider.id, config, editingProvider.models);
+    } else {
+      await addProvider(config);
+    }
     setModalVisible(false);
+    setEditingProvider(null);
+  };
+
+  const handleEditProvider = (provider: any) => {
+    setEditingProvider(provider);
+    setModalVisible(true);
   };
 
   const handleDeleteProvider = (id: string) => {
@@ -38,10 +49,15 @@ export default function AISettingsScreen() {
         {
           text: '删除',
           style: 'destructive',
-          onPress: () => deleteProvider(id),
+          onPress: async () => await deleteProvider(id),
         },
       ]
     );
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setEditingProvider(null);
   };
 
   return (
@@ -69,16 +85,18 @@ export default function AISettingsScreen() {
             <AIProviderCard
               key={provider.id}
               provider={provider}
-              onSetDefault={() => setDefaultProvider(provider.id)}
+              onToggle={() => toggleProvider(provider.id, !provider.isEnabled)}
+              onEdit={() => handleEditProvider(provider)}
               onDelete={() => handleDeleteProvider(provider.id)}
             />
           ))}
         </ScrollView>
 
-        <AIConfigModal
+        <AIConfigDrawer
           visible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          onConfirm={handleAddProvider}
+          onClose={handleCloseModal}
+          onConfirm={handleSaveProvider}
+          editProvider={editingProvider}
         />
       </SafeAreaView>
     </>

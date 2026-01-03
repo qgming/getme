@@ -3,18 +3,25 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Appearance } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useNoteStore, useThemeStore } from '../stores';
+import { useNoteStore, useThemeStore, useAIStore } from '../stores';
+import { initializeDefaultProviders } from '../services/aiInitialData';
 
 export default function RootLayout() {
   const initialize = useNoteStore(state => state.initialize);
   const loadThemeMode = useThemeStore(state => state.loadThemeMode);
   const updateColorScheme = useThemeStore(state => state.updateColorScheme);
   const colorScheme = useThemeStore(state => state.colorScheme);
+  const loadProviders = useAIStore(state => state.loadProviders);
 
   useEffect(() => {
-    initialize();
-    loadThemeMode();
-  }, [initialize, loadThemeMode]);
+    const init = async () => {
+      await initialize();
+      await initializeDefaultProviders();
+      await loadProviders();
+      loadThemeMode();
+    };
+    init();
+  }, [initialize, loadThemeMode, loadProviders]);
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(() => {
