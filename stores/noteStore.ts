@@ -2,14 +2,13 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Note } from '../types/Note';
 import {
-  initDatabase,
   getAllNotes,
   saveNote,
   deleteNote,
   searchNotes,
   getStats,
   getNoteById
-} from '../services/database';
+} from '../services/notesDb';
 
 // 定义状态接口
 interface NoteState {
@@ -69,8 +68,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     try {
       console.log('开始初始化NoteStore...');
       set({ loading: true });
-      await initDatabase();
-      console.log('数据库初始化完成');
       const notes = await getAllNotes();
       console.log('获取到的笔记数量:', notes.length);
       set({ notes, initialized: true, loading: false });

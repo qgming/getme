@@ -1,4 +1,4 @@
-import { initDatabase } from './database';
+import { initDatabase } from './db';
 
 export interface AIProvider {
   id: string;
@@ -18,7 +18,6 @@ export interface AIModel {
   createdAt: string;
 }
 
-// AI供应商 CRUD
 export const getAllProviders = async (): Promise<AIProvider[]> => {
   const db = await initDatabase();
   const result = await db.getAllAsync<{
@@ -30,9 +29,7 @@ export const getAllProviders = async (): Promise<AIProvider[]> => {
     iconName: string | null;
     createdAt: string;
     updatedAt: string;
-  }>(
-    'SELECT * FROM ai_providers ORDER BY createdAt DESC'
-  );
+  }>('SELECT * FROM ai_providers ORDER BY createdAt DESC');
   return result.map(p => ({ ...p, isEnabled: p.isEnabled === 1, iconName: p.iconName || undefined }));
 };
 
@@ -47,10 +44,7 @@ export const getProviderById = async (id: string): Promise<AIProvider | null> =>
     iconName: string | null;
     createdAt: string;
     updatedAt: string;
-  }>(
-    'SELECT * FROM ai_providers WHERE id = ?',
-    [id]
-  );
+  }>('SELECT * FROM ai_providers WHERE id = ?', [id]);
   return result ? { ...result, isEnabled: result.isEnabled === 1, iconName: result.iconName || undefined } : null;
 };
 
@@ -90,8 +84,6 @@ export const deleteProvider = async (id: string): Promise<void> => {
   await db.runAsync('DELETE FROM ai_providers WHERE id = ?', [id]);
 };
 
-
-// AI模型 CRUD
 export const getModelsByProvider = async (providerId: string): Promise<AIModel[]> => {
   const db = await initDatabase();
   return await db.getAllAsync<AIModel>(

@@ -1,4 +1,4 @@
-import * as aiDb from './aiDatabase';
+import * as aiDb from './aiProvidersDb';
 
 export const initializeDefaultProviders = async () => {
   const providers = await aiDb.getAllProviders();

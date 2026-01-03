@@ -16,7 +16,7 @@ import { AddModelModal } from '../components/AddModelModal';
 import { ActionMenu } from '../components/ActionMenu';
 import { useTheme } from '../hooks/useTheme';
 import { useAIStore } from '../stores/aiStore';
-import * as aiDb from '../services/aiDatabase';
+import * as aiDb from '../services/aiProvidersDb';
 
 export default function AIProviderScreen() {
   const { colors } = useTheme();
