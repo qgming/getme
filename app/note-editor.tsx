@@ -26,7 +26,7 @@ export default function NoteEditorScreen() {
   const { colors } = useTheme();
   const params = useLocalSearchParams();
   const noteStore = useNoteStore();
-  const { createNote, updateNoteSilently, deleteNoteById } = noteStore;
+  const { createNote, updateNote, deleteNoteById } = noteStore;
 
   const [content, setContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
@@ -108,7 +108,7 @@ export default function NoteEditorScreen() {
     };
 
     loadNote();
-  }, [params.noteId, noteStore]);
+  }, [params.noteId, noteStore, router]);
 
   // 处理保存
   const handleSave = useCallback(async (showFeedback = true) => {
@@ -138,7 +138,7 @@ export default function NoteEditorScreen() {
           createdAt: createdAt,
           updatedAt: new Date().toISOString(),
         };
-        await updateNoteSilently(existingNote);
+        await updateNote(existingNote);
       } else {
         // 创建新笔记
         const savedNote = await createNote(noteData);
@@ -160,7 +160,7 @@ export default function NoteEditorScreen() {
       isSavingRef.current = false;
       setIsSaving(false);
     }
-  }, [noteId, createdAt, updateNoteSilently, createNote]);
+  }, [noteId, createdAt, updateNote, createNote]);
 
   // 标签变化时立即保存
   useEffect(() => {
@@ -185,17 +185,6 @@ export default function NoteEditorScreen() {
       }
     };
   }, [content, originalContent, handleSave]);
-
-
-  // 处理返回
-  const handleBack = () => {
-    const hasContentChange = contentRef.current.trim() !== originalContent.trim();
-    const hasTagsChange = JSON.stringify(tagsRef.current) !== JSON.stringify(originalTags);
-    if (contentRef.current.trim() && (hasContentChange || hasTagsChange) && !isSavingRef.current) {
-      handleSave(false);
-    }
-    router.back();
-  };
 
   // 删除笔记
   const handleDelete = () => {
@@ -307,6 +296,9 @@ export default function NoteEditorScreen() {
 
         <View style={styles.headerRight}>
           {isSaving && <ActivityIndicator size="small" color={colors.blue} style={{ marginRight: 8 }} />}
+          <TouchableOpacity style={styles.headerButton} onPress={() => setTagModalVisible(true)}>
+            <Ionicons name="pricetag-outline" size={24} color={colors.blue} />
+          </TouchableOpacity>
           <View ref={menuButtonRef}>
             <TouchableOpacity style={styles.headerButton} onPress={handleShowMenu}>
               <Ionicons name="ellipsis-horizontal" size={24} color={colors.textQuaternary} />
@@ -364,17 +356,6 @@ export default function NoteEditorScreen() {
             autoFocus={true}
           />
         </ScrollView>
-
-        {/* 底部工具栏 */}
-        <View style={[styles.toolbar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-          <TouchableOpacity
-            style={[styles.toolbarButton, { backgroundColor: colors.surface }]}
-            onPress={() => setTagModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="pricetag-outline" size={22} color={colors.blue} />
-          </TouchableOpacity>
-        </View>
       </KeyboardAvoidingView>
 
       <ActionMenu
@@ -411,7 +392,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 10,
+    flexGrow: 1,
   },
   header: {
     flexDirection: 'row',
@@ -458,8 +439,9 @@ const styles = StyleSheet.create({
   contentInput: {
     fontSize: 18,
     lineHeight: 26,
-    minHeight: 200,
+    flex: 1,
     paddingHorizontal: 18,
+    paddingBottom: 20,
   },
   tagContainer: {
     flexDirection: 'row',
@@ -482,17 +464,5 @@ const styles = StyleSheet.create({
   },
   tagClose: {
     marginLeft: 2,
-  },
-  toolbarSafeArea: {},
-  toolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderTopWidth: 1,
-  },
-  toolbarButton: {
-    padding: 6,
-    borderRadius: 8,
   },
 });

@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
-import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { DialogInput } from '../components/DialogInput';
 import { CustomHeader } from '../components/CustomHeader';
 import { useNoteStore } from '../stores';
@@ -24,7 +23,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function DataStatisticsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const notes = useNoteStore(state => state.notes);
   const getStatistics = useNoteStore(state => state.getStatistics);
   const getAllTags = useNoteStore(state => state.getAllTags);
   const pinnedTags = useNoteStore(state => state.pinnedTags);
@@ -111,8 +109,6 @@ export default function DataStatisticsScreen() {
             <Text style={[styles.statLabel, { color: colors.textQuaternary }]}>天</Text>
           </View>
         </View>
-
-        <ActivityHeatmap notes={notes} width={SCREEN_WIDTH - 32} />
 
         {pinnedTags.length > 0 && (
           <View style={styles.section}>

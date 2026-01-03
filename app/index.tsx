@@ -12,10 +12,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { NoteCard } from '../components/NoteCard';
 import { AddNoteDrawer } from '../components/AddNoteDrawer';
-import { useNoteStore } from '../stores';
+import { FloatingAddButton } from '../components/FloatingAddButton';
+import { NoteCard } from '../components/NoteCard';
 import { useTheme } from '../hooks/useTheme';
+import { useNoteStore } from '../stores';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -86,7 +87,7 @@ export default function HomeScreen() {
         onPress={() => router.push('/statistics' as any)}
       >
         <Ionicons name="airplane-outline" size={20} color={colors.text} />
-        <Text style={[styles.topButtonText, { color: colors.text }]}>每日回顾</Text>
+        <Text style={[styles.topButtonText, { color: colors.text }]}>数据统计</Text>
       </TouchableOpacity>
     </View>
   );
@@ -131,12 +132,7 @@ export default function HomeScreen() {
       />
 
       {/* 浮动添加按钮 */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: '#10b981' }]}
-        onPress={() => setDrawerVisible(true)}
-      >
-        <Ionicons name="add" size={28} color="white" />
-      </TouchableOpacity>
+      <FloatingAddButton onPress={() => setDrawerVisible(true)} />
 
       <AddNoteDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
     </SafeAreaView>
@@ -214,21 +210,5 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-  },
-  fab: {
-    position: 'absolute',
-    left: '50%',
-    marginLeft: -28,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
   },
 });
