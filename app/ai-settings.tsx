@@ -1,8 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Plus } from 'lucide-react-native';
 import { Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -12,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomHeader } from '../components/CustomHeader';
 import { AIConfigDrawer } from '../components/AIConfigDrawer';
 import { AIProviderCard } from '../components/AIProviderCard';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useTheme } from '../hooks/useTheme';
 import { useAIStore } from '../stores/aiStore';
 
@@ -19,6 +19,7 @@ export default function AISettingsScreen() {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProvider, setEditingProvider] = useState<any>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const { providers, addProvider, updateProvider, deleteProvider, toggleProvider, loadProviders } = useAIStore();
 
   useEffect(() => {
@@ -41,18 +42,14 @@ export default function AISettingsScreen() {
   };
 
   const handleDeleteProvider = (id: string) => {
-    Alert.alert(
-      '删除配置',
-      '确定要删除这个AI配置吗？',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '删除',
-          style: 'destructive',
-          onPress: async () => await deleteProvider(id),
-        },
-      ]
-    );
+    setConfirmDelete(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (confirmDelete) {
+      await deleteProvider(confirmDelete);
+      setConfirmDelete(null);
+    }
   };
 
   const handleCloseModal = () => {
@@ -75,7 +72,7 @@ export default function AISettingsScreen() {
               onPress={() => setModalVisible(true)}
               activeOpacity={0.7}
             >
-              <Ionicons name="add" size={28} color={colors.accent} />
+              <Plus size={28} color={colors.accent} />
             </TouchableOpacity>
           }
         />
@@ -97,6 +94,17 @@ export default function AISettingsScreen() {
           onClose={handleCloseModal}
           onConfirm={handleSaveProvider}
           editProvider={editingProvider}
+        />
+
+        <ConfirmDialog
+          visible={!!confirmDelete}
+          title="删除配置"
+          message="确定要删除这个AI配置吗？"
+          confirmText="删除"
+          cancelText="取消"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDelete(null)}
+          isDestructive
         />
       </SafeAreaView>
     </>

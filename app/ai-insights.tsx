@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Sparkles } from 'lucide-react-native';
 import React from 'react';
 import { StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,7 +15,7 @@ export default function AIInsightsScreen() {
       <CustomHeader title="AI 洞察" showBackButton />
 
       <View style={styles.container}>
-        <Ionicons name="sparkles-outline" size={64} color={colors.textQuaternary} />
+        <Sparkles size={64} color={colors.textQuaternary} />
         <Text style={[styles.placeholderText, { color: colors.textQuaternary }]}>AI 洞察功能</Text>
         <Text style={[styles.placeholderSubtext, { color: colors.textMuted }]}>即将推出</Text>
       </View>

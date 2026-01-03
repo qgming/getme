@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import * as LobeIcons from '@lobehub/icons-rn';
-import { Ionicons } from '@expo/vector-icons';
+import { X, Search } from 'lucide-react-native';
 import { useTheme } from '../hooks/useTheme';
 
 interface IconPickerDrawerProps {
@@ -83,12 +83,12 @@ export function IconPickerDrawer({ visible, onClose, onSelect, selectedIcon }: I
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]}>选择图标</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={colors.text} />
+              <X size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+            <Search size={20} color={colors.textSecondary} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, { color: colors.text, backgroundColor: colors.background }]}
               value={searchQuery}

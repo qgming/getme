@@ -1,9 +1,7 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MoreHorizontal, Hash } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -14,11 +12,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
 import { DialogInput } from '../components/DialogInput';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CustomHeader } from '../components/CustomHeader';
 import { useNoteStore } from '../stores';
 import { useTheme } from '../hooks/useTheme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function DataStatisticsScreen() {
   const router = useRouter();
@@ -42,6 +39,8 @@ export default function DataStatisticsScreen() {
   const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null);
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [newTagName, setNewTagName] = useState('');
+  const [confirmDeleteTag, setConfirmDeleteTag] = useState(false);
+  const [confirmDeleteTagWithNotes, setConfirmDeleteTagWithNotes] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -76,14 +75,6 @@ export default function DataStatisticsScreen() {
     loadData();
   }, [loadData]);
 
-
-  const getTagIcon = (tag: string) => {
-    if (tag.includes('方法论')) return 'book-open-variant';
-    if (tag.includes('思考')) return 'thought-bubble-outline';
-    if (tag.includes('产品')) return 'monitor';
-    return 'pound';
-  };
-
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
@@ -95,18 +86,20 @@ export default function DataStatisticsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{stats.notes}</Text>
-            <Text style={[styles.statLabel, { color: colors.textQuaternary }]}>笔记</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{stats.tags}</Text>
-            <Text style={[styles.statLabel, { color: colors.textQuaternary }]}>标签</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{stats.days}</Text>
-            <Text style={[styles.statLabel, { color: colors.textQuaternary }]}>天</Text>
+        <View style={styles.statsContainer}>
+          <View style={[styles.statsCard, { backgroundColor: colors.surface }]}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.notes}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>笔记</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.tags}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>标签</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.days}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>天</Text>
+            </View>
           </View>
         </View>
 
@@ -125,11 +118,7 @@ export default function DataStatisticsScreen() {
                 }}
               >
                 <View style={styles.tagLeft}>
-                  <MaterialCommunityIcons
-                    name={getTagIcon(tag)}
-                    size={18}
-                    color={colors.text}
-                  />
+                  <Hash size={18} color={colors.text} />
                   <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
                 </View>
                 <TouchableOpacity
@@ -143,7 +132,7 @@ export default function DataStatisticsScreen() {
                   }}
                   style={styles.moreButton}
                 >
-                  <Ionicons name="ellipsis-horizontal" size={18} color={colors.textQuaternary} />
+                  <MoreHorizontal size={18} color={colors.textQuaternary} />
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -165,11 +154,7 @@ export default function DataStatisticsScreen() {
                 }}
               >
                 <View style={styles.tagLeft}>
-                  <MaterialCommunityIcons
-                    name={getTagIcon(tag)}
-                    size={18}
-                    color={colors.text}
-                  />
+                  <Hash size={18} color={colors.text} />
                   <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
                 </View>
                 <TouchableOpacity
@@ -183,7 +168,7 @@ export default function DataStatisticsScreen() {
                   }}
                   style={styles.moreButton}
                 >
-                  <Ionicons name="ellipsis-horizontal" size={18} color={colors.textQuaternary} />
+                  <MoreHorizontal size={18} color={colors.textQuaternary} />
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -226,46 +211,16 @@ export default function DataStatisticsScreen() {
             label: '仅删除标签',
             icon: 'pricetag-outline',
             onPress: () => {
-              if (selectedTag) {
-                Alert.alert(
-                  '仅删除标签',
-                  `确定要删除标签"${selectedTag}"吗？笔记将保留。`,
-                  [
-                    { text: '取消', style: 'cancel' },
-                    {
-                      text: '删除',
-                      style: 'destructive',
-                      onPress: async () => {
-                        await deleteTag(selectedTag);
-                        await loadData();
-                      },
-                    },
-                  ]
-                );
-              }
+              setShowActionMenu(false);
+              setConfirmDeleteTag(true);
             },
           },
           {
             label: '删除标签和笔记',
             icon: 'trash-outline',
             onPress: () => {
-              if (selectedTag) {
-                Alert.alert(
-                  '删除标签和笔记',
-                  `确定要删除标签"${selectedTag}"及其所有笔记吗？此操作无法撤销。`,
-                  [
-                    { text: '取消', style: 'cancel' },
-                    {
-                      text: '删除',
-                      style: 'destructive',
-                      onPress: async () => {
-                        await deleteTagWithNotes(selectedTag);
-                        await loadData();
-                      },
-                    },
-                  ]
-                );
-              }
+              setShowActionMenu(false);
+              setConfirmDeleteTagWithNotes(true);
             },
             isDestructive: true,
           },
@@ -297,6 +252,40 @@ export default function DataStatisticsScreen() {
         }}
         placeholder="输入新标签名称"
       />
+
+      <ConfirmDialog
+        visible={confirmDeleteTag}
+        title="仅删除标签"
+        message={`确定要删除标签"${selectedTag}"吗？笔记将保留。`}
+        confirmText="删除"
+        cancelText="取消"
+        onConfirm={async () => {
+          if (selectedTag) {
+            await deleteTag(selectedTag);
+            await loadData();
+          }
+          setConfirmDeleteTag(false);
+        }}
+        onCancel={() => setConfirmDeleteTag(false)}
+        isDestructive
+      />
+
+      <ConfirmDialog
+        visible={confirmDeleteTagWithNotes}
+        title="删除标签和笔记"
+        message={`确定要删除标签"${selectedTag}"及其所有笔记吗？此操作无法撤销。`}
+        confirmText="删除"
+        cancelText="取消"
+        onConfirm={async () => {
+          if (selectedTag) {
+            await deleteTagWithNotes(selectedTag);
+            await loadData();
+          }
+          setConfirmDeleteTagWithNotes(false);
+        }}
+        onCancel={() => setConfirmDeleteTagWithNotes(false)}
+        isDestructive
+      />
     </SafeAreaView>
   );
 }
@@ -311,22 +300,29 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
-  statsRow: {
-    flexDirection: 'row',
+  statsContainer: {
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
   },
+  statsCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+  },
   statItem: {
-    marginRight: 40,
+    alignItems: 'center',
   },
   statValue: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
   },
   statLabel: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 13,
+    marginTop: 6,
   },
   section: {
     marginTop: 20,

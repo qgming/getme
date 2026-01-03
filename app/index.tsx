@@ -1,10 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
+import { FileText, Sparkles, BarChart3, Menu, Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddNoteDrawer } from '../components/AddNoteDrawer';
 import { FloatingAddButton } from '../components/FloatingAddButton';
 import { NoteCard } from '../components/NoteCard';
+import { Toast } from '../components/Toast';
 import { useTheme } from '../hooks/useTheme';
 import { useNoteStore } from '../stores';
 
@@ -25,6 +26,12 @@ export default function HomeScreen() {
   const deleteNoteById = useNoteStore(state => state.deleteNoteById);
   const { colors } = useTheme();
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({ visible: false, message: '', type: 'success' });
+
+  // 按创建时间排序（最新的在前）
+  const sortedNotes = [...notes].sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   // 处理笔记点击
   const handleNotePress = (note: any) => {
@@ -43,17 +50,17 @@ export default function HomeScreen() {
   const handleDeleteNote = async (noteId: string) => {
     try {
       await deleteNoteById(noteId);
-      Alert.alert('成功', '笔记已删除');
+      setToast({ visible: true, message: '笔记已删除', type: 'success' });
     } catch (error) {
       console.error('删除失败:', error);
-      Alert.alert('错误', '删除笔记失败，请重试');
+      setToast({ visible: true, message: '删除笔记失败，请重试', type: 'error' });
     }
   };
 
   // 渲染空状态
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="document-text-outline" size={64} color={colors.textQuaternary} />
+      <FileText size={64} color={colors.textQuaternary} />
       <Text style={[styles.emptyText, { color: colors.textQuaternary }]}>还没有笔记</Text>
       <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>点击下方绿色按钮开始记录</Text>
     </View>
@@ -73,12 +80,17 @@ export default function HomeScreen() {
 
   // 渲染顶部按钮
   const renderHeader = () => (
-    <View style={styles.topButtons}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.topButtons}
+      contentContainerStyle={styles.topButtonsContent}
+    >
       <TouchableOpacity
         style={[styles.topButton, { backgroundColor: colors.surface }]}
         onPress={() => router.push('/ai-insights' as any)}
       >
-        <Ionicons name="sparkles-outline" size={20} color={colors.text} />
+        <Sparkles size={20} color={colors.text} />
         <Text style={[styles.topButtonText, { color: colors.text }]}>AI 洞察</Text>
       </TouchableOpacity>
 
@@ -86,10 +98,10 @@ export default function HomeScreen() {
         style={[styles.topButton, { backgroundColor: colors.surface }]}
         onPress={() => router.push('/statistics' as any)}
       >
-        <Ionicons name="airplane-outline" size={20} color={colors.text} />
+        <BarChart3 size={20} color={colors.text} />
         <Text style={[styles.topButtonText, { color: colors.text }]}>数据统计</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 
   // 渲染笔记列表项
@@ -108,7 +120,7 @@ export default function HomeScreen() {
       {/* 顶部导航栏 */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.push('/settings' as any)} style={styles.iconButton}>
-          <Ionicons name="menu" size={24} color={colors.text} />
+          <Menu size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View style={styles.titleContainer}>
@@ -116,13 +128,13 @@ export default function HomeScreen() {
         </View>
 
         <TouchableOpacity onPress={handleSearch} style={styles.iconButton}>
-          <Ionicons name="search" size={24} color={colors.text} />
+          <Search size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 
       {/* 笔记列表 */}
       <FlatList
-        data={notes}
+        data={sortedNotes}
         renderItem={renderNoteItem}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
@@ -135,6 +147,13 @@ export default function HomeScreen() {
       <FloatingAddButton onPress={() => setDrawerVisible(true)} />
 
       <AddNoteDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast({ ...toast, visible: false })}
+      />
     </SafeAreaView>
   );
 }
@@ -163,21 +182,22 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   topButtons: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 6,
+  },
+  topButtonsContent: {
+    paddingHorizontal: 16,
     gap: 12,
   },
   topButton: {
-    flex: 1,
+    width: 110,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    gap: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    gap: 6,
   },
   topButtonText: {
     fontSize: 15,

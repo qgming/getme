@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { MoreHorizontal, Sparkles } from 'lucide-react-native';
 import * as LobeIcons from '@lobehub/icons-rn';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -50,7 +50,7 @@ export function AIProviderCard({ provider, onToggle, onEdit, onDelete }: AIProvi
     },
     ...(!isBuiltIn ? [{
       label: '删除',
-      icon: 'trash-outline' as keyof typeof Ionicons.glyphMap,
+      icon: 'trash-outline',
       onPress: () => {
         setShowMenu(false);
         onDelete();
@@ -71,7 +71,7 @@ export function AIProviderCard({ provider, onToggle, onEdit, onDelete }: AIProvi
             {IconComponent?.Avatar ? (
               <IconComponent.Avatar size={30} />
             ) : (
-              <Ionicons name="sparkles" size={30} color={colors.accent} />
+              <Sparkles size={30} color={colors.accent} />
             )}
             <Text style={[styles.name, { color: colors.text }]}>{provider.name}</Text>
             {provider.isEnabled && (
@@ -84,7 +84,7 @@ export function AIProviderCard({ provider, onToggle, onEdit, onDelete }: AIProvi
             onPress={handleMorePress}
             style={styles.moreButton}
           >
-            <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
+            <MoreHorizontal size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 

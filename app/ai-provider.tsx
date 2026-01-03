@@ -1,8 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Plus, Box, MoreHorizontal } from 'lucide-react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   FlatList,
   StatusBar,
   StyleSheet,
@@ -14,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomHeader } from '../components/CustomHeader';
 import { AddModelModal } from '../components/AddModelModal';
 import { ActionMenu } from '../components/ActionMenu';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useTheme } from '../hooks/useTheme';
 import { useAIStore } from '../stores/aiStore';
 import * as aiDb from '../services/aiProvidersDb';
@@ -27,6 +27,7 @@ export default function AIProviderScreen() {
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedModel, setSelectedModel] = useState<{ id: string; name: string } | null>(null);
   const [editingModel, setEditingModel] = useState<{ id: string; name: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const provider = providers.find(p => p.id === id);
 
@@ -66,17 +67,13 @@ export default function AIProviderScreen() {
 
   const handleDeleteModel = () => {
     setMenuVisible(false);
-    Alert.alert('删除模型', '确定要删除这个模型吗？', [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '删除',
-        style: 'destructive',
-        onPress: async () => {
-          await aiDb.deleteModel(selectedModel!.id);
-          await loadProviders();
-        },
-      },
-    ]);
+    setConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    await aiDb.deleteModel(selectedModel!.id);
+    await loadProviders();
+    setConfirmDelete(false);
   };
 
   return (
@@ -90,7 +87,7 @@ export default function AIProviderScreen() {
           showBackButton
           rightElement={
             <TouchableOpacity onPress={() => setModalVisible(true)}>
-              <Ionicons name="add" size={28} color={colors.accent} />
+              <Plus size={28} color={colors.accent} />
             </TouchableOpacity>
           }
         />
@@ -118,20 +115,20 @@ export default function AIProviderScreen() {
           renderItem={({ item }) => (
             <View style={[styles.modelCard, { backgroundColor: colors.surface }]}>
               <View style={styles.modelHeader}>
-                <Ionicons name="cube-outline" size={20} color={colors.accent} />
+                <Box size={20} color={colors.accent} />
                 <Text style={[styles.modelName, { color: colors.text }]}>{item.name}</Text>
                 <TouchableOpacity
                   onPress={(event) => handleMorePress(event, item)}
                   style={styles.moreButton}
                 >
-                  <Ionicons name="ellipsis-horizontal" size={20} color={colors.text} />
+                  <MoreHorizontal size={20} color={colors.text} />
                 </TouchableOpacity>
               </View>
             </View>
           )}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="cube-outline" size={48} color={colors.textSecondary} />
+              <Box size={48} color={colors.textSecondary} />
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                 暂无模型
               </Text>
@@ -167,6 +164,17 @@ export default function AIProviderScreen() {
           }}
           onConfirm={editingModel ? handleUpdateModel : handleAddModel}
           initialData={editingModel || undefined}
+        />
+
+        <ConfirmDialog
+          visible={confirmDelete}
+          title="删除模型"
+          message="确定要删除这个模型吗？"
+          confirmText="删除"
+          cancelText="取消"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDelete(false)}
+          isDestructive
         />
       </SafeAreaView>
     </>

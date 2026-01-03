@@ -1,10 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
+import { MoreHorizontal } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { Alert, GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Note, formatFullDateTime, getPreviewText } from '../types/Note';
 import { ActionItem, ActionMenu } from './ActionMenu';
+import { ConfirmDialog } from './ConfirmDialog';
+import { Toast } from './Toast';
 import { useTheme } from '../hooks/useTheme';
 
 interface NoteCardProps {
@@ -18,31 +20,22 @@ const NoteCardComponent: React.FC<NoteCardProps> = ({ note, onPress, onDelete })
   const { colors } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({ visible: false, message: '', type: 'success' });
   const menuButtonRef = useRef<View>(null);
 
   // 处理删除
   const handleDelete = () => {
-    Alert.alert(
-      '删除笔记',
-      '确定要删除这个笔记吗？',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '删除',
-          style: 'destructive',
-          onPress: () => onDelete(note.id),
-        },
-      ]
-    );
+    setConfirmDelete(true);
   };
 
   // 处理复制
   const handleCopy = async () => {
     try {
       await Clipboard.setStringAsync(note.content);
-      Alert.alert('成功', '笔记内容已复制到剪贴板');
+      setToast({ visible: true, message: '笔记内容已复制到剪贴板', type: 'success' });
     } catch {
-      Alert.alert('错误', '复制失败，请重试');
+      setToast({ visible: true, message: '复制失败，请重试', type: 'error' });
     }
   };
 
@@ -69,7 +62,7 @@ const NoteCardComponent: React.FC<NoteCardProps> = ({ note, onPress, onDelete })
   return (
     <>
       <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+        style={[styles.card, { backgroundColor: colors.surface }]}
         onPress={() => onPress(note)}
         onLongPress={handleMenuPress}
         activeOpacity={0.8}
@@ -86,7 +79,7 @@ const NoteCardComponent: React.FC<NoteCardProps> = ({ note, onPress, onDelete })
             activeOpacity={0.6}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="ellipsis-horizontal" size={16} color={colors.textQuaternary} />
+            <MoreHorizontal size={16} color={colors.textQuaternary} />
           </TouchableOpacity>
         </View>
 
@@ -108,7 +101,7 @@ const NoteCardComponent: React.FC<NoteCardProps> = ({ note, onPress, onDelete })
               return (
                 <TouchableOpacity
                   key={index}
-                  style={[styles.tag, { backgroundColor: colors.blueLight }]}
+                  style={[styles.tag, { backgroundColor: 'rgba(52, 211, 153, 0.15)' }]}
                   onPress={() => {
                     router.push({
                       pathname: '/tag-notes',
@@ -117,7 +110,7 @@ const NoteCardComponent: React.FC<NoteCardProps> = ({ note, onPress, onDelete })
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.tagText, { color: colors.blue }]}>
+                  <Text style={[styles.tagText, { color: colors.primary }]}>
                     #{tag}
                   </Text>
                 </TouchableOpacity>
@@ -132,6 +125,27 @@ const NoteCardComponent: React.FC<NoteCardProps> = ({ note, onPress, onDelete })
         onClose={() => setShowMenu(false)}
         anchorPosition={menuPosition}
         actions={menuActions}
+      />
+
+      <ConfirmDialog
+        visible={confirmDelete}
+        title="删除笔记"
+        message="确定要删除这个笔记吗？"
+        confirmText="删除"
+        cancelText="取消"
+        onConfirm={() => {
+          onDelete(note.id);
+          setConfirmDelete(false);
+        }}
+        onCancel={() => setConfirmDelete(false)}
+        isDestructive
+      />
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast({ ...toast, visible: false })}
       />
     </>
   );
@@ -154,7 +168,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginHorizontal: 16,
     marginVertical: 6,
-    borderWidth: 1,
   },
   header: {
     flexDirection: 'row',

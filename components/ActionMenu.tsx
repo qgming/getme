@@ -1,11 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
+import * as LucideIcons from 'lucide-react-native';
 import React from 'react';
 import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 
 export interface ActionItem {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   onPress: () => void;
   isDestructive?: boolean;
 }
@@ -94,34 +94,50 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             },
           ]}
         >
-          {actions.map((action, index) => (
-            <Pressable
-              key={index}
-              style={[
-                styles.menuItem,
-                index > 0 && styles.borderTop,
-              ]}
-              onPress={() => {
-                action.onPress();
-                onClose();
-              }}
-              android_ripple={{ color: colors.surfaceSecondary }}
-            >
-              <Ionicons
-                name={action.icon}
-                size={18}
-                color={action.isDestructive ? colors.red : colors.textSecondary}
-              />
-              <Text
+          {actions.map((action, index) => {
+            const iconMap: Record<string, keyof typeof LucideIcons> = {
+              'copy-outline': 'Copy',
+              'trash-outline': 'Trash',
+              'create-outline': 'Edit',
+              'checkmark-circle-outline': 'CheckCircle',
+              'close-circle-outline': 'XCircle',
+              'share-outline': 'Share',
+              'push-outline': 'Pin',
+              'pricetag-outline': 'Tag',
+              'sunny-outline': 'Sun',
+              'moon-outline': 'Moon',
+              'phone-portrait-outline': 'Smartphone',
+            };
+            const IconComponent = LucideIcons[iconMap[action.icon] || 'HelpCircle' as keyof typeof LucideIcons] as any;
+
+            return (
+              <Pressable
+                key={index}
                 style={[
-                  styles.menuText,
-                  { color: action.isDestructive ? colors.red : colors.textSecondary },
+                  styles.menuItem,
+                  index > 0 && styles.borderTop,
                 ]}
+                onPress={() => {
+                  action.onPress();
+                  onClose();
+                }}
+                android_ripple={{ color: colors.surfaceSecondary }}
               >
-                {action.label}
-              </Text>
-            </Pressable>
-          ))}
+                <IconComponent
+                  size={18}
+                  color={action.isDestructive ? colors.red : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.menuText,
+                    { color: action.isDestructive ? colors.red : colors.textSecondary },
+                  ]}
+                >
+                  {action.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </Pressable>
     </Modal>

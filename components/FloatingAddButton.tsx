@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Mic, Plus } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
@@ -13,13 +13,13 @@ export function FloatingAddButton({ onPress }: FloatingAddButtonProps) {
         style={[styles.button, styles.leftButton]}
         onPress={() => {}}
       >
-        <Ionicons name="mic" size={24} color="white" />
+        <Mic size={24} color="white" />
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.button, styles.rightButton]}
         onPress={onPress}
       >
-        <Ionicons name="add" size={24} color="white" />
+        <Plus size={24} color="white" />
       </TouchableOpacity>
     </View>
   );

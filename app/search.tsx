@@ -1,8 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Search, FileText, ArrowLeft, XCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Keyboard,
   StyleSheet,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NoteCard } from '../components/NoteCard';
+import { Toast } from '../components/Toast';
 import { useNoteStore } from '../stores';
 import { Note } from '../types/Note';
 import { useTheme } from '../hooks/useTheme';
@@ -27,6 +27,7 @@ export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Note[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({ visible: false, message: '', type: 'success' });
 
   // 搜索功能
   useEffect(() => {
@@ -70,12 +71,12 @@ export default function SearchScreen() {
   const handleDeleteNote = async (noteId: string) => {
     try {
       await deleteNoteById(noteId);
-      Alert.alert('成功', '笔记已删除');
+      setToast({ visible: true, message: '笔记已删除', type: 'success' });
       // 从搜索结果中移除已删除的笔记
       setSearchResults(prev => prev.filter(note => note.id !== noteId));
     } catch (error) {
       console.error('删除失败:', error);
-      Alert.alert('错误', '删除笔记失败，请重试');
+      setToast({ visible: true, message: '删除笔记失败，请重试', type: 'error' });
     }
   };
 
@@ -93,7 +94,7 @@ export default function SearchScreen() {
     if (!searchQuery.trim()) {
       return (
         <View style={styles.emptyContainer}>
-          <Ionicons name="search" size={64} color={colors.textMuted} />
+          <Search size={64} color={colors.textMuted} />
           <Text style={[styles.emptyText, { color: colors.textTertiary }]}>输入关键词搜索笔记</Text>
           <Text style={[styles.emptySubtext, { color: colors.textQuaternary }]}>支持搜索内容和标签</Text>
         </View>
@@ -110,7 +111,7 @@ export default function SearchScreen() {
 
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="document-text-outline" size={64} color={colors.textMuted} />
+        <FileText size={64} color={colors.textMuted} />
         <Text style={[styles.emptyText, { color: colors.textTertiary }]}>未找到匹配的笔记</Text>
         <Text style={[styles.emptySubtext, { color: colors.textQuaternary }]}>试试其他关键词</Text>
       </View>
@@ -139,12 +140,11 @@ export default function SearchScreen() {
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons
-            name="search"
+          <Search
             size={20}
             color={colors.textQuaternary}
             style={styles.searchIcon}
@@ -167,7 +167,7 @@ export default function SearchScreen() {
               onPress={() => setSearchQuery('')}
               activeOpacity={0.7}
             >
-              <Ionicons name="close-circle" size={20} color={colors.textQuaternary} />
+              <XCircle size={20} color={colors.textQuaternary} />
             </TouchableOpacity>
           )}
         </View>
@@ -185,6 +185,13 @@ export default function SearchScreen() {
           ListEmptyComponent={renderEmptyComponent}
         />
       </View>
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast({ ...toast, visible: false })}
+      />
     </SafeAreaView>
   );
 }

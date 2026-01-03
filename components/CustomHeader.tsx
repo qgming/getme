@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { ReactNode } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -39,7 +39,7 @@ export function CustomHeader({
             onPress={handleBackPress}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <ArrowLeft size={24} color={colors.text} />
           </TouchableOpacity>
         ) : leftElement ? (
           leftElement

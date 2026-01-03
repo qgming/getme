@@ -1,8 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Tag } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Alert,
   FlatList,
   StatusBar,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NoteCard } from '../components/NoteCard';
 import { CustomHeader } from '../components/CustomHeader';
+import { Toast } from '../components/Toast';
 import { Note } from '../types/Note';
 import { useNoteStore } from '../stores';
 import { useTheme } from '../hooks/useTheme';
@@ -23,6 +23,7 @@ export default function TagNotesScreen() {
   const deleteNoteById = useNoteStore(state => state.deleteNoteById);
   const allNotes = useNoteStore(state => state.notes);
   const notes = allNotes.filter(n => n.tags?.includes(tag));
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({ visible: false, message: '', type: 'success' });
 
   const handleNotePress = (note: Note) => {
     router.navigate({
@@ -34,10 +35,10 @@ export default function TagNotesScreen() {
   const handleDeleteNote = async (noteId: string) => {
     try {
       await deleteNoteById(noteId);
-      Alert.alert('成功', '笔记已删除');
+      setToast({ visible: true, message: '笔记已删除', type: 'success' });
     } catch (error) {
       console.error('删除失败:', error);
-      Alert.alert('错误', '删除笔记失败，请重试');
+      setToast({ visible: true, message: '删除笔记失败，请重试', type: 'error' });
     }
   };
 
@@ -51,7 +52,7 @@ export default function TagNotesScreen() {
 
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="pricetag-outline" size={64} color={colors.textQuaternary} />
+      <Tag size={64} color={colors.textQuaternary} />
       <Text style={[styles.emptyText, { color: colors.textQuaternary }]}>该标签下暂无笔记</Text>
     </View>
   );
@@ -72,6 +73,13 @@ export default function TagNotesScreen() {
           ListEmptyComponent={renderEmptyComponent}
         />
       </View>
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast({ ...toast, visible: false })}
+      />
     </SafeAreaView>
   );
 }

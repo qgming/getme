@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Palette, ChevronRight, Sparkles, Sun, Moon, Smartphone } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -53,12 +53,12 @@ export default function SettingsScreen() {
           }}
         >
           <View style={styles.cardLeft}>
-            <Ionicons name="color-palette-outline" size={22} color={colors.text} />
+            <Palette size={22} color={colors.text} />
             <Text style={[styles.cardTitle, { color: colors.text }]}>主题模式</Text>
           </View>
           <View style={styles.cardRight}>
             <Text style={[styles.cardValue, { color: colors.textQuaternary }]}>{getThemeLabel()}</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textQuaternary} />
+            <ChevronRight size={20} color={colors.textQuaternary} />
           </View>
         </TouchableOpacity>
 
@@ -67,11 +67,11 @@ export default function SettingsScreen() {
           onPress={() => router.push('/ai-settings')}
         >
           <View style={styles.cardLeft}>
-            <Ionicons name="sparkles-outline" size={22} color={colors.text} />
+            <Sparkles size={22} color={colors.text} />
             <Text style={[styles.cardTitle, { color: colors.text }]}>AI设置</Text>
           </View>
           <View style={styles.cardRight}>
-            <Ionicons name="chevron-forward" size={20} color={colors.textQuaternary} />
+            <ChevronRight size={20} color={colors.textQuaternary} />
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -86,17 +86,17 @@ export default function SettingsScreen() {
         actions={[
           {
             label: '浅色模式',
-            icon: 'sunny-outline',
+            icon: 'sunny-outline' as any,
             onPress: async () => await setThemeMode('light'),
           },
           {
             label: '深色模式',
-            icon: 'moon-outline',
+            icon: 'moon-outline' as any,
             onPress: async () => await setThemeMode('dark'),
           },
           {
             label: '跟随系统',
-            icon: 'phone-portrait-outline',
+            icon: 'phone-portrait-outline' as any,
             onPress: async () => await setThemeMode('system'),
           },
         ]}
