@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NoteCard } from '../components/NoteCard';
+import { AddNoteDrawer } from '../components/AddNoteDrawer';
 import { useNoteStore } from '../stores';
 import { useTheme } from '../hooks/useTheme';
 
@@ -22,6 +23,7 @@ export default function HomeScreen() {
   const loading = useNoteStore(state => state.loading);
   const deleteNoteById = useNoteStore(state => state.deleteNoteById);
   const { colors } = useTheme();
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   // 处理笔记点击
   const handleNotePress = (note: any) => {
@@ -131,10 +133,12 @@ export default function HomeScreen() {
       {/* 浮动添加按钮 */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: '#10b981' }]}
-        onPress={() => router.push('/note-editor' as any)}
+        onPress={() => setDrawerVisible(true)}
       >
         <Ionicons name="add" size={28} color="white" />
       </TouchableOpacity>
+
+      <AddNoteDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -213,7 +217,8 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    right: 20,
+    left: '50%',
+    marginLeft: -28,
     bottom: 20,
     width: 56,
     height: 56,

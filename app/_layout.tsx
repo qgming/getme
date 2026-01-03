@@ -34,6 +34,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="ai-insights" options={{ headerShown: false }} />
+        <Stack.Screen name="ai-settings" options={{ headerShown: false }} />
         <Stack.Screen name="statistics" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="note-editor" options={{ headerShown: false }} />

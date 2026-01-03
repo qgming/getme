@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
@@ -15,6 +16,7 @@ import { useThemeStore } from '../stores';
 import { useTheme } from '../hooks/useTheme';
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { colors } = useTheme();
   const themeMode = useThemeStore(state => state.themeMode);
   const setThemeMode = useThemeStore(state => state.setThemeMode);
@@ -56,6 +58,19 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.cardRight}>
             <Text style={[styles.cardValue, { color: colors.textQuaternary }]}>{getThemeLabel()}</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textQuaternary} />
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: colors.surface }]}
+          onPress={() => router.push('/ai-settings')}
+        >
+          <View style={styles.cardLeft}>
+            <Ionicons name="sparkles-outline" size={22} color={colors.text} />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>AI设置</Text>
+          </View>
+          <View style={styles.cardRight}>
             <Ionicons name="chevron-forward" size={20} color={colors.textQuaternary} />
           </View>
         </TouchableOpacity>

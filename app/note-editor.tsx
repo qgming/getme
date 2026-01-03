@@ -95,12 +95,11 @@ export default function NoteEditorScreen() {
           } else {
             console.log('未找到ID为', id, '的笔记');
             Alert.alert('错误', '未找到该笔记');
+            router.back();
           }
         } else {
-          console.log('没有noteId参数，新建笔记模式');
-          // 新建笔记时，设置原始内容为空
-          setOriginalContent('');
-          setOriginalTags([]);
+          console.log('没有noteId参数，返回首页');
+          router.back();
         }
       } catch (error) {
         console.error('加载笔记失败:', error);
