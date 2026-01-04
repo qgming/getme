@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
-  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -66,7 +65,7 @@ export function AddNoteDrawer({ visible, onClose }: AddNoteDrawerProps) {
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              behavior="padding"
               style={[styles.drawer, { backgroundColor: colors.surface }]}
             >
               <TextInput

@@ -1,147 +1,31 @@
-# GetMe Notes App
+# Getme - AI 懂你，记录真我
 
-A modern React Native notes application optimized with **Expo Router** and **Zustand**.
+<p align="center">
+  <img src="./assets/images/icon.png" alt="GetMe Logo" width="120" height="120">
+</p>
 
-## 🚀 Features
+一款基于 React Native 开发的 AI 智能笔记/日记应用，采用 Expo Router 和 Zustand 构建。
 
-- ✨ **Expo Router** - File-based routing with type safety
-- 🎯 **Zustand** - Modern state management with excellent performance
-- 📱 **SQLite** - Local database storage
-- 📝 **Markdown Support** - Rich text editing with preview
-- 🔍 **Search** - Full-text search functionality
-- 🏷️ **Tagging** - Organize notes with tags
-- 🎨 **Modern UI** - Clean, responsive design
+## ✨ 核心功能
 
-## 📦 Tech Stack
+### AI 智能特性
 
-- **Framework**: Expo + React Native
-- **Routing**: Expo Router v6
-- **State Management**: Zustand v5
-- **Database**: Expo SQLite
-- **UI**: React Native + Ionicons
-- **Markdown**: react-native-markdown-display
+- 🤖 **AI 智能标签生成** - 自动分析笔记内容，智能生成相关标签，无需手动分类整理
+- 🎤 **AI 语音转文字** - 语音输入实时转写为文字，解放双手快速记录想法和灵感
+- 💬 **AI 对话助手** - 与另一个 AI 进行自然对话，获取灵感、建议和思考，激发创作灵感
 
-## 🚀 Quick Start
+### 基础功能
 
-1. **Install dependencies**
-   ```bash
-   npm install
-   ```
+- 🔍 **全文搜索** - 快速查找笔记内容
+- 🏷️ **标签管理** - 使用标签组织笔记
+- 💾 **本地存储** - 基于 SQLite 的本地数据库，数据安全可控
+- 🎨 **现代界面** - 简洁响应式设计
+- ⚡ **高性能** - 优化的状态管理和渲染
 
-2. **Start the app**
-   ```bash
-   npx expo start
-   ```
+## 🛠️ 技术栈
 
-3. **Run TypeScript checks**
-   ```bash
-   npx tsc --noEmit
-   ```
-
-4. **Run linting**
-   ```bash
-   npm run lint
-   ```
-
-## 📁 Project Structure
-
-```
-app/                    # Expo Router pages
-├── _layout.tsx        # Root layout with Zustand initialization
-├── index.tsx          # Home screen - notes list
-├── note-editor.tsx    # Create/edit notes
-├── search.tsx         # Search functionality
-└── sidebar.tsx        # Navigation menu
-
-stores/                 # Zustand state management
-├── noteStore.ts       # Main store with all logic
-└── index.ts           # Public API
-
-services/               # Data layer
-└── database.ts        # SQLite operations
-
-components/             # UI components
-└── NoteCard.tsx       # Reusable note card
-
-types/                  # TypeScript definitions
-└── Note.ts            # Note interface & utilities
-```
-
-## 🎯 State Management
-
-The app uses **Zustand** for state management, providing:
-
-- ⚡ **Performance**: Only re-renders when specific state changes
-- 🔒 **Type Safety**: Full TypeScript support
-- 🎨 **Developer Experience**: Great IDE integration
-- 📦 **Maintainability**: Clean separation of concerns
-
-### Example Usage
-
-```typescript
-import { useNoteStore } from '../stores';
-
-function MyComponent() {
-  // Subscribe to specific state
-  const notes = useNoteStore(state => state.notes);
-  const createNote = useNoteStore(state => state.createNote);
-
-  return (
-    <View>
-      {notes.map(note => (
-        <Text key={note.id}>{note.title}</Text>
-      ))}
-    </View>
-  );
-}
-```
-
-## 🛠️ Development
-
-### Code Quality
-- ✅ TypeScript for type safety
-- ✅ ESLint for code quality
-- ✅ Consistent project structure
-
-### Available Scripts
-```bash
-npm start        # Start Expo development server
-npm run android  # Start on Android
-npm run ios      # Start on iOS
-npm run web      # Start on web
-npm run lint     # Run ESLint
-```
-
-## 📖 Documentation
-
-- **[Optimization Guide](./OPTIMIZATION.md)** - Detailed migration from Context to Zustand
-- **[Store Documentation](./stores/README.md)** - Complete Zustand API reference
-
-## 🎨 Architecture Benefits
-
-### Performance
-- 🚀 Minimal re-renders with Zustand selectors
-- 📊 Efficient state updates
-- 🔄 Optimized database operations
-
-### Developer Experience
-- 🔍 Full type inference
-- 🎯 Autocomplete support
-- 📝 Clear separation of concerns
-
-### Maintainability
-- 🏗️ Scalable architecture
-- 🧪 Easy to test
-- 🔧 Simple to extend
-
-## 🚀 Next Steps
-
-1. Add user authentication
-2. Implement cloud sync
-3. Add export/import functionality
-4. Dark mode support
-5. Rich text formatting toolbar
-
-## 📄 License
-
-MIT
+- **框架**: Expo + React Native
+- **路由**: Expo Router v6
+- **状态管理**: Zustand v5
+- **数据库**: Expo SQLite
+- **UI 组件**: React Native
