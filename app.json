@@ -8,11 +8,22 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "需要访问麦克风以录制语音",
+        "NSPhotoLibraryUsageDescription": "需要存储权限以保存录音"
+      }
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "package": "com.qgming.getme"
+      "package": "com.qgming.getme",
+      "permissions": [
+        "RECORD_AUDIO",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "output": "static"

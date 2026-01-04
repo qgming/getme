@@ -1,27 +1,40 @@
 import { Mic, Plus } from 'lucide-react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { RecordingModal } from './RecordingModal';
 
 interface FloatingAddButtonProps {
   onPress: () => void;
 }
 
 export function FloatingAddButton({ onPress }: FloatingAddButtonProps) {
+  const [showRecording, setShowRecording] = useState(false);
+
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={[styles.button, styles.leftButton]}
-        onPress={() => {}}
-      >
-        <Mic size={24} color="white" />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.button, styles.rightButton]}
-        onPress={onPress}
-      >
-        <Plus size={24} color="white" />
-      </TouchableOpacity>
-    </View>
+    <>
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={[styles.button, styles.leftButton]}
+          onPress={() => setShowRecording(true)}
+        >
+          <Mic size={24} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, styles.rightButton]}
+          onPress={onPress}
+        >
+          <Plus size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+      <RecordingModal
+        visible={showRecording}
+        onClose={() => setShowRecording(false)}
+        onComplete={(uri) => {
+          console.log('Recording saved:', uri);
+          setShowRecording(false);
+        }}
+      />
+    </>
   );
 }
 

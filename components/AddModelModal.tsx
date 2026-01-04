@@ -14,32 +14,32 @@ import { useTheme } from '../hooks/useTheme';
 interface AddModelModalProps {
   visible: boolean;
   onClose: () => void;
-  onConfirm: (data: { id: string; name: string }) => void;
-  initialData?: { id: string; name: string };
+  onConfirm: (data: { modelId: string; name: string }) => void;
+  initialData?: { modelId: string; name: string };
 }
 
 export function AddModelModal({ visible, onClose, onConfirm, initialData }: AddModelModalProps) {
   const { colors } = useTheme();
-  const [id, setId] = useState('');
+  const [modelId, setModelId] = useState('');
   const [name, setName] = useState('');
 
   useEffect(() => {
     if (visible) {
-      setId(initialData?.id || '');
+      setModelId(initialData?.modelId || '');
       setName(initialData?.name || '');
     }
   }, [visible, initialData]);
 
   const handleConfirm = () => {
-    if (id.trim() && name.trim()) {
-      onConfirm({ id: id.trim(), name: name.trim() });
-      setId('');
+    if (modelId.trim() && name.trim()) {
+      onConfirm({ modelId: modelId.trim(), name: name.trim() });
+      setModelId('');
       setName('');
     }
   };
 
   const handleClose = () => {
-    setId('');
+    setModelId('');
     setName('');
     onClose();
   };
@@ -63,8 +63,8 @@ export function AddModelModal({ visible, onClose, onConfirm, initialData }: AddM
                 <Text style={[styles.label, { color: colors.textSecondary }]}>ID</Text>
                 <TextInput
                   style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
-                  value={id}
-                  onChangeText={setId}
+                  value={modelId}
+                  onChangeText={setModelId}
                   placeholder="例如：gpt-4"
                   placeholderTextColor={colors.textTertiary}
                   autoCapitalize="none"
@@ -93,10 +93,10 @@ export function AddModelModal({ visible, onClose, onConfirm, initialData }: AddM
                   style={[
                     styles.button,
                     { backgroundColor: colors.accent },
-                    (!id.trim() || !name.trim()) && styles.buttonDisabled
+                    (!modelId.trim() || !name.trim()) && styles.buttonDisabled
                   ]}
                   onPress={handleConfirm}
-                  disabled={!id.trim() || !name.trim()}
+                  disabled={!modelId.trim() || !name.trim()}
                 >
                   <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>确定</Text>
                 </TouchableOpacity>
@@ -144,6 +144,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+  },
+  inputDisabled: {
+    opacity: 0.5,
   },
   buttons: {
     flexDirection: 'row',

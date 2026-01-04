@@ -11,9 +11,11 @@
     "build:android:preview": "eas build --profile preview --platform android"
   },
   "dependencies": {
+    "@langchain/core": "^1.1.8",
     "@lobehub/icons-rn": "^2.0.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~54.0.30",
+    "expo-av": "~16.0.8",
     "expo-build-properties": "~1.0.10",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.12",
@@ -22,6 +24,7 @@
     "expo-router": "~6.0.21",
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
+    "langchain": "^1.2.3",
     "lucide-react-native": "^0.562.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",

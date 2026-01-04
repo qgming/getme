@@ -23,7 +23,8 @@
       "Bash(move:*)",
       "Bash(if exist \"app\\\\\\(tabs\\)\" rmdir \"app\\\\\\(tabs\\)\")",
       "Bash(find:*)",
-      "Bash(if exist \"components\\\\AIConfigModal.tsx\" del \"components\\\\AIConfigModal.tsx\")"
+      "Bash(if exist \"components\\\\AIConfigModal.tsx\" del \"components\\\\AIConfigModal.tsx\")",
+      "Bash(mkdir:*)"
     ]
   }
 }

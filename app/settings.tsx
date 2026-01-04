@@ -1,7 +1,8 @@
-import { Palette, ChevronRight, Sparkles, Sun, Moon, Smartphone } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { ChevronRight, Cpu, Palette, Sparkles } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
+  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -12,8 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
 import { CustomHeader } from '../components/CustomHeader';
-import { useThemeStore } from '../stores';
 import { useTheme } from '../hooks/useTheme';
+import { useThemeStore } from '../stores';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -43,6 +44,14 @@ export default function SettingsScreen() {
       <CustomHeader title="设置" showBackButton />
 
       <ScrollView style={styles.content}>
+        <View style={[styles.iconCard, { backgroundColor: colors.primary }]}>
+          <Image source={require('../assets/images/icon.png')} style={styles.iconImage} />
+          <View style={styles.appInfo}>
+            <Text style={styles.appName}>Getme</Text>
+            <Text style={styles.appVersion}>v1.0.0</Text>
+          </View>
+        </View>
+
         <TouchableOpacity
           style={[styles.card, { backgroundColor: colors.surface }]}
           onPress={(e) => {
@@ -69,6 +78,19 @@ export default function SettingsScreen() {
           <View style={styles.cardLeft}>
             <Sparkles size={22} color={colors.text} />
             <Text style={[styles.cardTitle, { color: colors.text }]}>AI设置</Text>
+          </View>
+          <View style={styles.cardRight}>
+            <ChevronRight size={20} color={colors.textQuaternary} />
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: colors.surface }]}
+          onPress={() => router.push('/default-model')}
+        >
+          <View style={styles.cardLeft}>
+            <Cpu size={22} color={colors.text} />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>默认模型</Text>
           </View>
           <View style={styles.cardRight}>
             <ChevronRight size={20} color={colors.textQuaternary} />
@@ -112,6 +134,36 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingTop: 12,
+  },
+  iconCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 30,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  iconImage: {
+    width: 120,
+    height: 120,
+  },
+  appInfo: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    alignItems: 'flex-end',
+  },
+  appName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  appVersion: {
+    fontSize: 12,
+    color: '#fff',
+    opacity: 0.9,
   },
   card: {
     flexDirection: 'row',

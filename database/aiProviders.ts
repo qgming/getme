@@ -14,6 +14,7 @@ export interface AIProvider {
 export interface AIModel {
   id: string;
   providerId: string;
+  modelId: string;
   name: string;
   createdAt: string;
 }
@@ -92,17 +93,18 @@ export const getModelsByProvider = async (providerId: string): Promise<AIModel[]
   );
 };
 
-export const createModel = async (model: Omit<AIModel, 'createdAt'>): Promise<AIModel> => {
+export const createModel = async (model: Omit<AIModel, 'id' | 'createdAt'>): Promise<AIModel> => {
   const db = await initDatabase();
   const now = new Date().toISOString();
+  const id = `model_${Date.now()}`;
 
   await db.runAsync(
-    `INSERT INTO ai_models (id, providerId, name, createdAt)
-     VALUES (?, ?, ?, ?)`,
-    [model.id, model.providerId, model.name, now]
+    `INSERT INTO ai_models (id, providerId, modelId, name, createdAt)
+     VALUES (?, ?, ?, ?, ?)`,
+    [id, model.providerId, model.modelId, model.name, now]
   );
 
-  return { ...model, createdAt: now };
+  return { id, ...model, createdAt: now };
 };
 
 export const updateModel = async (id: string, updates: Partial<Omit<AIModel, 'id' | 'providerId' | 'createdAt'>>): Promise<void> => {
@@ -110,6 +112,7 @@ export const updateModel = async (id: string, updates: Partial<Omit<AIModel, 'id
   const fields: string[] = [];
   const values: any[] = [];
 
+  if (updates.modelId !== undefined) { fields.push('modelId = ?'); values.push(updates.modelId); }
   if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
   values.push(id);
 

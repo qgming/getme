@@ -28,8 +28,8 @@ export default function AIProviderScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
-  const [selectedModel, setSelectedModel] = useState<{ id: string; name: string } | null>(null);
-  const [editingModel, setEditingModel] = useState<{ id: string; name: string } | null>(null);
+  const [selectedModel, setSelectedModel] = useState<{ id: string; modelId: string; name: string } | null>(null);
+  const [editingModel, setEditingModel] = useState<{ id: string; modelId: string; name: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [testModalVisible, setTestModalVisible] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -43,13 +43,13 @@ export default function AIProviderScreen() {
 
   const models = provider.models || [];
 
-  const handleAddModel = async (data: { id: string; name: string }) => {
+  const handleAddModel = async (data: { modelId: string; name: string }) => {
     await aiDb.createModel({ ...data, providerId: id });
     await loadProviders();
     setModalVisible(false);
   };
 
-  const handleMorePress = (event: any, model: { id: string; name: string }) => {
+  const handleMorePress = (event: any, model: { id: string; modelId: string; name: string }) => {
     const target = event.currentTarget || event.target;
     target.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
       setMenuPosition({ x: pageX + width, y: pageY + height });
@@ -64,8 +64,8 @@ export default function AIProviderScreen() {
     setModalVisible(true);
   };
 
-  const handleUpdateModel = async (data: { id: string; name: string }) => {
-    await aiDb.updateModel(editingModel!.id, { name: data.name });
+  const handleUpdateModel = async (data: { modelId: string; name: string }) => {
+    await aiDb.updateModel(editingModel!.id, { modelId: data.modelId, name: data.name });
     await loadProviders();
     setModalVisible(false);
     setEditingModel(null);
@@ -84,6 +84,9 @@ export default function AIProviderScreen() {
 
   const handleTestModel = async (modelId: string) => {
     setTesting(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+
     try {
       const response = await fetch(`${provider.baseUrl}/chat/completions`, {
         method: 'POST',
@@ -96,15 +99,23 @@ export default function AIProviderScreen() {
           messages: [{ role: 'user', content: 'Hi' }],
           max_tokens: 10,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (response.ok) {
-        setToast({ message: '连接成功，模型可用', type: 'success' });
+        setToast({ message: '连接成功,模型可用', type: 'success' });
       } else {
-        setToast({ message: `连接失败，状态码: ${response.status}`, type: 'error' });
+        setToast({ message: `连接失败,状态码: ${response.status}`, type: 'error' });
       }
     } catch (error) {
-      setToast({ message: error instanceof Error ? error.message : '测试失败', type: 'error' });
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        setToast({ message: '连接超时,请检查网络或服务地址', type: 'error' });
+      } else {
+        setToast({ message: error instanceof Error ? error.message : '测试失败', type: 'error' });
+      }
     } finally {
       setTesting(false);
       setTestModalVisible(false);
@@ -211,7 +222,7 @@ export default function AIProviderScreen() {
         <ConfirmDialog
           visible={confirmDelete}
           title="删除模型"
-          message="确定要删除这个模型吗？"
+          message="确定要删除这个模型吗?"
           confirmText="删除"
           cancelText="取消"
           onConfirm={handleConfirmDelete}
@@ -236,7 +247,7 @@ export default function AIProviderScreen() {
                 <TouchableOpacity
                   key={model.id}
                   style={styles.modelOption}
-                  onPress={() => handleTestModel(model.id)}
+                  onPress={() => handleTestModel(model.modelId)}
                   disabled={testing}
                 >
                   <Text style={[styles.modelOptionText, { color: colors.text }]}>

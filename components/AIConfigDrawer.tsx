@@ -45,7 +45,7 @@ export function AIConfigDrawer({ visible, onClose, onConfirm, editProvider }: AI
   }, [editProvider, visible]);
 
   const handleConfirm = () => {
-    if (name.trim() && apiKey.trim() && baseUrl.trim()) {
+    if (name.trim()) {
       onConfirm({ name, apiKey, baseUrl, iconName });
       setName('');
       setApiKey('');
@@ -160,10 +160,10 @@ export function AIConfigDrawer({ visible, onClose, onConfirm, editProvider }: AI
                   style={[
                     styles.button,
                     { backgroundColor: colors.accent },
-                    (!name.trim() || !apiKey.trim() || !baseUrl.trim()) && styles.buttonDisabled
+                    !name.trim() && styles.buttonDisabled
                   ]}
                   onPress={handleConfirm}
-                  disabled={!name.trim() || !apiKey.trim() || !baseUrl.trim()}
+                  disabled={!name.trim()}
                 >
                   <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>确定</Text>
                 </TouchableOpacity>

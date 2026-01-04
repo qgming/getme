@@ -53,8 +53,29 @@ export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
         CREATE TABLE IF NOT EXISTS ai_models (
           id TEXT PRIMARY KEY,
           providerId TEXT NOT NULL,
+          modelId TEXT NOT NULL,
           name TEXT NOT NULL,
           createdAt TEXT NOT NULL,
+          FOREIGN KEY (providerId) REFERENCES ai_providers(id) ON DELETE CASCADE
+        );
+      `);
+
+      const modelColumns = await dbInstance.getAllAsync<{ name: string }>(
+        "PRAGMA table_info(ai_models)"
+      );
+      const hasModelId = modelColumns.some(col => col.name === 'modelId');
+
+      if (!hasModelId) {
+        await dbInstance.runAsync(`ALTER TABLE ai_models ADD COLUMN modelId TEXT`);
+        await dbInstance.runAsync(`UPDATE ai_models SET modelId = id WHERE modelId IS NULL`);
+      }
+
+      await dbInstance.runAsync(`
+        CREATE TABLE IF NOT EXISTS default_models (
+          feature TEXT PRIMARY KEY,
+          modelId TEXT NOT NULL,
+          providerId TEXT NOT NULL,
+          FOREIGN KEY (modelId) REFERENCES ai_models(id) ON DELETE CASCADE,
           FOREIGN KEY (providerId) REFERENCES ai_providers(id) ON DELETE CASCADE
         );
       `);

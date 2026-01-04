@@ -3,6 +3,7 @@ import * as aiDb from '../database/aiProviders';
 
 export interface AIModel {
   id: string;
+  modelId: string;
   name: string;
 }
 

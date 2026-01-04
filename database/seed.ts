@@ -13,7 +13,7 @@ export const initializeDefaultProviders = async () => {
     });
 
     await aiDb.createModel({
-      id: 'mimo-v2-flash',
+      modelId: 'mimo-v2-flash',
       providerId: xiaomiMimo.id,
       name: 'MiMo V2 Flash',
     });
@@ -27,13 +27,13 @@ export const initializeDefaultProviders = async () => {
     });
 
     await aiDb.createModel({
-      id: 'deepseek-chat',
+      modelId: 'deepseek-chat',
       providerId: deepseek.id,
       name: 'DeepSeek Chat',
     });
 
     await aiDb.createModel({
-      id: 'deepseek-reasoner',
+      modelId: 'deepseek-reasoner',
       providerId: deepseek.id,
       name: 'DeepSeek Reasoner',
     });
@@ -47,15 +47,15 @@ export const initializeDefaultProviders = async () => {
     });
 
     await aiDb.createModel({
-      id: 'deepseek-ai/DeepSeek-V3.2',
+      modelId: 'deepseek-ai/DeepSeek-V3',
       providerId: siliconflow.id,
-      name: 'DeepSeek V3.2',
+      name: 'DeepSeek V3',
     });
 
     await aiDb.createModel({
-      id: 'FunAudioLLM/SenseVoiceSmall',
+      modelId: 'Qwen/Qwen2.5-7B-Instruct',
       providerId: siliconflow.id,
-      name: 'SenseVoiceSmall',
+      name: 'Qwen2.5 7B',
     });
   }
 };
