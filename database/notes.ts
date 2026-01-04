@@ -1,4 +1,4 @@
-import { initDatabase } from './db';
+import { initDatabase } from './index';
 import { Note } from '../types/Note';
 
 export const getAllNotes = async (): Promise<Note[]> => {

@@ -8,7 +8,7 @@ import {
   searchNotes,
   getStats,
   getNoteById
-} from '../services/notesDb';
+} from '../database/notes';
 
 // 定义状态接口
 interface NoteState {

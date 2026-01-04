@@ -1,4 +1,4 @@
-import { initDatabase } from './db';
+import { initDatabase } from './index';
 
 export interface AIProvider {
   id: string;

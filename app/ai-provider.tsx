@@ -1,8 +1,10 @@
-import { Plus, Box, MoreHorizontal } from 'lucide-react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { Box, MoreHorizontal, Plus, TestTube2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
+  Modal,
   StatusBar,
   StyleSheet,
   Text,
@@ -10,13 +12,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CustomHeader } from '../components/CustomHeader';
-import { AddModelModal } from '../components/AddModelModal';
 import { ActionMenu } from '../components/ActionMenu';
+import { AddModelModal } from '../components/AddModelModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { CustomHeader } from '../components/CustomHeader';
+import { Toast } from '../components/Toast';
 import { useTheme } from '../hooks/useTheme';
+import * as aiDb from '../database/aiProviders';
 import { useAIStore } from '../stores/aiStore';
-import * as aiDb from '../services/aiProvidersDb';
 
 export default function AIProviderScreen() {
   const { colors } = useTheme();
@@ -28,6 +31,9 @@ export default function AIProviderScreen() {
   const [selectedModel, setSelectedModel] = useState<{ id: string; name: string } | null>(null);
   const [editingModel, setEditingModel] = useState<{ id: string; name: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [testModalVisible, setTestModalVisible] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const provider = providers.find(p => p.id === id);
 
@@ -76,6 +82,35 @@ export default function AIProviderScreen() {
     setConfirmDelete(false);
   };
 
+  const handleTestModel = async (modelId: string) => {
+    setTesting(true);
+    try {
+      const response = await fetch(`${provider.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${provider.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: modelId,
+          messages: [{ role: 'user', content: 'Hi' }],
+          max_tokens: 10,
+        }),
+      });
+
+      if (response.ok) {
+        setToast({ message: '连接成功，模型可用', type: 'success' });
+      } else {
+        setToast({ message: `连接失败，状态码: ${response.status}`, type: 'error' });
+      }
+    } catch (error) {
+      setToast({ message: error instanceof Error ? error.message : '测试失败', type: 'error' });
+    } finally {
+      setTesting(false);
+      setTestModalVisible(false);
+    }
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -105,6 +140,13 @@ export default function AIProviderScreen() {
               {provider.apiKey ? '••••••••' + provider.apiKey.slice(-4) : '未设置'}
             </Text>
           </View>
+          <TouchableOpacity
+            style={[styles.testButton, { backgroundColor: colors.accent }]}
+            onPress={() => setTestModalVisible(true)}
+          >
+            <TestTube2 size={16} color="#fff" />
+            <Text style={styles.testButtonText}>测试</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>模型列表</Text>
@@ -176,6 +218,45 @@ export default function AIProviderScreen() {
           onCancel={() => setConfirmDelete(false)}
           isDestructive
         />
+
+        <Modal
+          visible={testModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setTestModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setTestModalVisible(false)}
+          >
+            <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>选择测试模型</Text>
+              {models.map((model) => (
+                <TouchableOpacity
+                  key={model.id}
+                  style={styles.modelOption}
+                  onPress={() => handleTestModel(model.id)}
+                  disabled={testing}
+                >
+                  <Text style={[styles.modelOptionText, { color: colors.text }]}>
+                    {model.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              {testing && <ActivityIndicator style={styles.loader} color={colors.accent} />}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {toast && (
+          <Toast
+            visible={true}
+            message={toast.message}
+            type={toast.type}
+            onHide={() => setToast(null)}
+          />
+        )}
       </SafeAreaView>
     </>
   );
@@ -242,5 +323,47 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     marginTop: 12,
+  },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+    gap: 6,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  modelOption: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modelOptionText: {
+    fontSize: 16,
+  },
+  loader: {
+    marginTop: 16,
   },
 });

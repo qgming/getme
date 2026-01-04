@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import * as aiDb from '../services/aiProvidersDb';
+import * as aiDb from '../database/aiProviders';
 
 export interface AIModel {
   id: string;

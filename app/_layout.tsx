@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Appearance } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useNoteStore, useThemeStore, useAIStore } from '../stores';
-import { initializeDefaultProviders } from '../services/aiSeedData';
+import { initializeDefaultProviders } from '../database/seed';
 
 export default function RootLayout() {
   const initialize = useNoteStore(state => state.initialize);
