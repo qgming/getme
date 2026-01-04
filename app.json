@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "getme",
+    "name": "Getme",
     "slug": "getme",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -20,7 +20,19 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "jsEngine": "hermes",
+            "arch": ["armeabi-v7a", "arm64-v8a"]
+          },
+          "ios": {
+            "jsEngine": "hermes"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -31,6 +43,7 @@
         "projectId": "e378138d-a0f1-4310-9b44-e4dc3a00c4f5"
       }
     },
-    "owner": "qgming"
+    "owner": "qgming",
+    "icon": "./assets/images/icon.png"
   }
 }
