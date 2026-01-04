@@ -29,10 +29,6 @@ export function FloatingAddButton({ onPress }: FloatingAddButtonProps) {
       <RecordingModal
         visible={showRecording}
         onClose={() => setShowRecording(false)}
-        onComplete={(uri) => {
-          console.log('Recording saved:', uri);
-          setShowRecording(false);
-        }}
       />
     </>
   );

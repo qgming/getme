@@ -1,105 +1,172 @@
-import { Audio } from 'expo-av';
-import { Pause, Play, Square } from 'lucide-react-native';
+import { AudioModule, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
+import { File } from 'expo-file-system';
+import { Check, Pause, Play, Square, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { transcribeAudio } from '../services/transcription';
+import { useNoteStore } from '../stores/noteStore';
+import { showToast } from './Toast';
 
 interface RecordingModalProps {
   visible: boolean;
   onClose: () => void;
-  onComplete: (uri: string) => void;
 }
 
-export function RecordingModal({ visible, onClose, onComplete }: RecordingModalProps) {
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+export function RecordingModal({ visible, onClose }: RecordingModalProps) {
+  const createNote = useNoteStore((state) => state.createNote);
+  const audioRecorder = useAudioRecorder({
+    extension: '.mp3',
+    sampleRate: 44100,
+    numberOfChannels: 2,
+    bitRate: 128000,
+    android: {
+      extension: '.mp3',
+      outputFormat: 'mpeg4' as any,
+      audioEncoder: 'aac' as any,
+    },
+    ios: {
+      extension: '.mp3',
+      outputFormat: 'mpeg4Layer3' as any,
+      audioQuality: 96,
+    },
+    web: {
+      mimeType: 'audio/webm',
+      bitsPerSecond: 128000,
+    },
+  });
+  const recorderState = useAudioRecorderState(audioRecorder);
   const [isPaused, setIsPaused] = useState(false);
-  const [duration, setDuration] = useState(0);
+  const [uri, setUri] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [finalDuration, setFinalDuration] = useState(0);
   const breathAnim = useRef(new Animated.Value(1)).current;
 
-  // 呼吸动画效果 - 只在录音且未暂停时显示
   useEffect(() => {
-    if (visible && recording && !isPaused) {
-      const breathAnimation = Animated.loop(
+    if (visible && recorderState.isRecording && !isPaused) {
+      const animation = Animated.loop(
         Animated.sequence([
           Animated.timing(breathAnim, { toValue: 0.3, duration: 1000, useNativeDriver: true }),
           Animated.timing(breathAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
         ])
       );
-      breathAnimation.start();
-      return () => breathAnimation.stop();
-    }
-  }, [visible, recording, isPaused, breathAnim]);
-
-  // 计时器 - 只在录音且未暂停时计时
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
-    if (visible && recording && !isPaused) {
-      interval = setInterval(() => setDuration(d => d + 1), 1000);
-    }
-    return () => { if (interval) clearInterval(interval); };
-  }, [visible, recording, isPaused]);
-
-  // 每次打开模态框时创建新的录音
-  useEffect(() => {
-    let currentRecording: Audio.Recording | null = null;
-
-    if (visible) {
-      // 重置所有状态,确保是全新的开始
-      setRecording(null);
-      setIsPaused(false);
-      setDuration(0);
+      animation.start();
+      return () => animation.stop();
+    } else {
       breathAnim.setValue(1);
-
-      (async () => {
-        try {
-          await Audio.requestPermissionsAsync();
-          await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-          const { recording: newRecording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-          currentRecording = newRecording;
-          setRecording(newRecording);
-        } catch (error) {
-          console.error('Recording failed:', error);
-        }
-      })();
     }
+  }, [visible, recorderState.isRecording, isPaused, breathAnim]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    setIsPaused(false);
+    setUri(null);
+    setIsTranscribing(false);
+    setFinalDuration(0);
+
+    const start = async () => {
+      try {
+        const { granted } = await AudioModule.requestRecordingPermissionsAsync();
+        if (!granted) {
+          showToast('请在设置中开启麦克风权限', 'error');
+          onClose();
+          return;
+        }
+
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
+        });
+
+        await audioRecorder.prepareToRecordAsync();
+        audioRecorder.record();
+      } catch (error) {
+        console.error('录音启动失败:', error);
+        showToast('录音启动失败', 'error');
+        onClose();
+      }
+    };
+
+    start();
 
     return () => {
-      // 清理:停止并卸载录音
-      if (currentRecording) {
-        currentRecording.stopAndUnloadAsync().catch(() => {});
+      if (audioRecorder.isRecording) {
+        audioRecorder.stop();
       }
-      // 重置所有状态
-      setRecording(null);
-      setIsPaused(false);
-      setDuration(0);
     };
-  }, [visible, breathAnim]);
+  }, [visible, audioRecorder, onClose]);
 
-  // 暂停/继续录音
-  const togglePause = async () => {
-    if (!recording) return;
-    if (isPaused) {
-      await recording.startAsync();
-      setIsPaused(false);
-    } else {
-      await recording.pauseAsync();
-      setIsPaused(true);
+  const togglePause = () => {
+    try {
+      if (recorderState.isRecording) {
+        audioRecorder.pause();
+        setIsPaused(true);
+      } else {
+        audioRecorder.record();
+        setIsPaused(false);
+      }
+    } catch (error) {
+      console.error('暂停/继续失败:', error);
+      showToast('操作失败', 'error');
     }
   };
 
-  // 完成录音
   const handleComplete = async () => {
-    if (!recording) return;
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-    if (uri) onComplete(uri);
-    setRecording(null);
-    setIsPaused(false);
+    try {
+      setFinalDuration(recorderState.durationMillis);
+      await audioRecorder.stop();
+      const recordingUri = audioRecorder.uri;
+      if (recordingUri) {
+        setUri(recordingUri);
+      } else {
+        showToast('获取录音文件失败', 'error');
+      }
+    } catch (error) {
+      console.error('停止录音失败:', error);
+      showToast('停止录音失败', 'error');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (uri) {
+      try {
+        const file = new File(uri);
+        file.delete();
+      } catch (error) {
+        console.error('删除录音文件失败:', error);
+      }
+    }
     onClose();
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+  const handleConfirm = async () => {
+    if (!uri) {
+      console.log('handleConfirm: uri is null');
+      return;
+    }
+    console.log('handleConfirm: starting transcription, uri:', uri);
+    setIsTranscribing(true);
+    showToast('AI转写中...', 'info', 0);
+    try {
+      const text = await transcribeAudio(uri);
+      console.log('handleConfirm: transcription result:', text);
+      await createNote({ content: text, tags: [] });
+      const file = new File(uri);
+      file.delete();
+      showToast('转写成功', 'success');
+      onClose();
+    } catch (error) {
+      console.error('handleConfirm: error:', error);
+      showToast(error instanceof Error ? error.message : '转写失败', 'error');
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const formatTime = (millis: number) => {
+    const totalSeconds = Math.floor(millis / 1000);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -112,25 +179,39 @@ export function RecordingModal({ visible, onClose, onComplete }: RecordingModalP
               <Text style={styles.recText}>REC </Text>
               <Animated.Text style={[styles.recDot, { opacity: breathAnim }]}>●</Animated.Text>
             </View>
-            <Text style={styles.date}>{new Date().toISOString().split('T')[0]}</Text>
+            <Text style={styles.date}>{new Date().toLocaleDateString()}</Text>
           </View>
 
           <View style={styles.footer}>
             <View style={styles.timeContainer}>
-              <Text style={styles.currentTime}>{formatTime(duration)}</Text>
+              <Text style={styles.currentTime}>{formatTime(uri ? finalDuration : recorderState.durationMillis)}</Text>
             </View>
-            <View style={styles.buttons}>
-              <TouchableOpacity style={styles.btnPause} onPress={togglePause}>
-                {isPaused ? (
-                  <Play size={24} color="#fff" fill="#fff" />
+
+            {!uri ? (
+              <View style={styles.buttons}>
+                <TouchableOpacity style={styles.btnPause} onPress={togglePause}>
+                  {isPaused ? <Play size={24} color="#fff" fill="#fff" /> : <Pause size={24} color="#fff" fill="#fff" />}
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.btnComplete} onPress={handleComplete}>
+                  <Square size={20} color="#fff" fill="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.buttons}>
+                {isTranscribing ? (
+                  <ActivityIndicator size="large" color="#10b981" />
                 ) : (
-                  <Pause size={24} color="#fff" fill="#fff" />
+                  <>
+                    <TouchableOpacity style={styles.btnDelete} onPress={handleDelete}>
+                      <X size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.btnConfirm} onPress={handleConfirm}>
+                      <Check size={24} color="#fff" />
+                    </TouchableOpacity>
+                  </>
                 )}
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnComplete} onPress={handleComplete}>
-                <Square size={20} color="#fff" fill="#fff" />
-              </TouchableOpacity>
-            </View>
+              </View>
+            )}
           </View>
         </View>
       </View>
@@ -140,15 +221,17 @@ export function RecordingModal({ visible, onClose, onComplete }: RecordingModalP
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', paddingBottom: 110 },
-  card: { backgroundColor: '#1a1a1a', marginHorizontal: 16, borderRadius: 24, padding: 24, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
-  header: { marginBottom: 24 },
-  recText: { fontSize: 14, color: '#fff', fontWeight: '600', letterSpacing: 1 },
+  card: { backgroundColor: '#1a1a1a', marginHorizontal: 16, borderRadius: 24, padding: 24 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
+  recText: { fontSize: 14, color: '#fff', fontWeight: '600' },
   recDot: { color: '#ef4444', fontSize: 14 },
-  date: { fontSize: 12, color: '#666', letterSpacing: 0.3, marginTop: 4 },
+  date: { fontSize: 12, color: '#666' },
   footer: {},
   timeContainer: { marginBottom: 24 },
-  currentTime: { fontSize: 56, color: '#fff', fontWeight: '700', fontVariant: ['tabular-nums'], letterSpacing: -2 },
+  currentTime: { fontSize: 56, color: '#fff', fontWeight: '700', fontVariant: ['tabular-nums'] },
   buttons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16 },
   btnPause: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
   btnComplete: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#10b981', alignItems: 'center', justifyContent: 'center' },
+  btnDelete: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#ef4444', alignItems: 'center', justifyContent: 'center' },
+  btnConfirm: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#10b981', alignItems: 'center', justifyContent: 'center' },
 });

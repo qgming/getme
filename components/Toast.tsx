@@ -5,11 +5,24 @@ import { useTheme } from '../hooks/useTheme';
 interface ToastProps {
   visible: boolean;
   message: string;
-  type?: 'success' | 'error';
+  type?: 'success' | 'error' | 'info';
+  duration?: number;
   onHide: () => void;
 }
 
-export function Toast({ visible, message, type = 'success', onHide }: ToastProps) {
+let globalShowToast: ((message: string, type?: 'success' | 'error' | 'info', duration?: number) => void) | null = null;
+
+export function showToast(message: string, type: 'success' | 'error' | 'info' = 'success', duration?: number) {
+  if (globalShowToast) {
+    globalShowToast(message, type, duration);
+  }
+}
+
+export function setGlobalToastHandler(handler: (message: string, type?: 'success' | 'error' | 'info', duration?: number) => void) {
+  globalShowToast = handler;
+}
+
+export function Toast({ visible, message, type = 'success', duration = 2000, onHide }: ToastProps) {
   const { colors } = useTheme();
   const opacity = React.useRef(new Animated.Value(0)).current;
   const scale = React.useRef(new Animated.Value(0.9)).current;
@@ -30,24 +43,26 @@ export function Toast({ visible, message, type = 'success', onHide }: ToastProps
         }),
       ]).start();
 
-      const timer = setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(opacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scale, {
-            toValue: 0.9,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]).start(() => onHide());
-      }, 2000);
+      if (duration > 0) {
+        const timer = setTimeout(() => {
+          Animated.parallel([
+            Animated.timing(opacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(scale, {
+              toValue: 0.9,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => onHide());
+        }, duration);
 
-      return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [visible, opacity, scale, onHide]);
+  }, [visible, opacity, scale, duration, onHide]);
 
   if (!visible) return null;
 

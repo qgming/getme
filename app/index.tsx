@@ -1,5 +1,5 @@
-import { FileText, Sparkles, BarChart3, Menu, Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { BarChart3, FileText, Menu, Search, Sparkles } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddNoteDrawer } from '../components/AddNoteDrawer';
 import { FloatingAddButton } from '../components/FloatingAddButton';
 import { NoteCard } from '../components/NoteCard';
-import { Toast } from '../components/Toast';
+import { Toast, setGlobalToastHandler } from '../components/Toast';
 import { useTheme } from '../hooks/useTheme';
 import { useNoteStore } from '../stores';
 
@@ -26,7 +26,13 @@ export default function HomeScreen() {
   const deleteNoteById = useNoteStore(state => state.deleteNoteById);
   const { colors } = useTheme();
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({ visible: false, message: '', type: 'success' });
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' | 'info'; duration?: number }>({ visible: false, message: '', type: 'success' });
+
+  React.useEffect(() => {
+    setGlobalToastHandler((message, type, duration) => {
+      setToast({ visible: true, message, type: type || 'success', duration });
+    });
+  }, []);
 
   // 按创建时间排序（最新的在前）
   const sortedNotes = [...notes].sort((a, b) =>
@@ -144,7 +150,9 @@ export default function HomeScreen() {
       />
 
       {/* 浮动添加按钮 */}
-      <FloatingAddButton onPress={() => setDrawerVisible(true)} />
+      <FloatingAddButton
+        onPress={() => setDrawerVisible(true)}
+      />
 
       <AddNoteDrawer visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
 
@@ -152,6 +160,7 @@ export default function HomeScreen() {
         visible={toast.visible}
         message={toast.message}
         type={toast.type}
+        duration={toast.duration}
         onHide={() => setToast({ ...toast, visible: false })}
       />
     </SafeAreaView>
