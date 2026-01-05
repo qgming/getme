@@ -3,12 +3,23 @@ import { getDefaultModel } from '../database/defaultModels';
 
 export const transcribeAudio = async (audioUri: string): Promise<string> => {
   try {
+    console.log('[Transcription] 开始转写,音频URI:', audioUri);
+
     const defaultModel = await getDefaultModel('transcription');
+    console.log('[Transcription] 默认模型配置:', defaultModel);
+
     if (!defaultModel) {
       throw new Error('未配置转写模型，请先在设置中配置AI转写模型');
     }
 
     const provider = await getProviderById(defaultModel.providerId);
+    console.log('[Transcription] 提供商配置:', provider ? {
+      id: provider.id,
+      name: provider.name,
+      baseUrl: provider.baseUrl,
+      hasApiKey: !!provider.apiKey
+    } : null);
+
     if (!provider) {
       throw new Error('转写服务提供商不存在');
     }
@@ -40,6 +51,8 @@ export const transcribeAudio = async (audioUri: string): Promise<string> => {
     formData.append('response_format', 'json');
 
     const url = `${provider.baseUrl}/audio/transcriptions`;
+    console.log('[Transcription] 请求URL:', url);
+    console.log('[Transcription] 使用模型ID:', defaultModel.modelId);
 
     const response = await fetch(url, {
       method: 'POST',

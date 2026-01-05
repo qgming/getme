@@ -1,4 +1,5 @@
 import * as aiDb from './aiProviders';
+import * as defaultModels from './defaultModels';
 
 export const initializeDefaultProviders = async () => {
   const providers = await aiDb.getAllProviders();
@@ -12,7 +13,7 @@ export const initializeDefaultProviders = async () => {
       iconName: 'XiaomiMimo',
     });
 
-    await aiDb.createModel({
+    const mimoFlash = await aiDb.createModel({
       modelId: 'mimo-v2-flash',
       providerId: xiaomiMimo.id,
       name: 'MiMo V2 Flash',
@@ -32,30 +33,27 @@ export const initializeDefaultProviders = async () => {
       name: 'DeepSeek Chat',
     });
 
-    await aiDb.createModel({
-      modelId: 'deepseek-reasoner',
-      providerId: deepseek.id,
-      name: 'DeepSeek Reasoner',
-    });
-
     const siliconflow = await aiDb.createProvider({
       name: 'SiliconFlow',
       apiKey: '',
       baseUrl: 'https://api.siliconflow.cn/v1',
       isEnabled: true,
-      iconName: 'SiliconFlow',
+      iconName: 'SiliconCloud',
     });
 
     await aiDb.createModel({
-      modelId: 'deepseek-ai/DeepSeek-V3',
+      modelId: 'deepseek-ai/DeepSeek-V3.2',
       providerId: siliconflow.id,
-      name: 'DeepSeek V3',
+      name: 'DeepSeek V3.2',
     });
 
-    await aiDb.createModel({
-      modelId: 'Qwen/Qwen2.5-7B-Instruct',
+    const senseVoice = await aiDb.createModel({
+      modelId: 'FunAudioLLM/SenseVoiceSmall',
       providerId: siliconflow.id,
-      name: 'Qwen2.5 7B',
+      name: 'SenseVoiceSmall',
     });
+
+    await defaultModels.setDefaultModel('transcription', senseVoice.modelId, siliconflow.id);
+    await defaultModels.setDefaultModel('chat', mimoFlash.modelId, xiaomiMimo.id);
   }
 };
