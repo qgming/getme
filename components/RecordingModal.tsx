@@ -1,5 +1,5 @@
 import { AudioModule, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
-import { File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Check, Pause, Play, Square, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -135,8 +135,7 @@ export function RecordingModal({ visible, onClose }: RecordingModalProps) {
   const handleDelete = async () => {
     if (uri) {
       try {
-        const file = new File(uri);
-        file.delete();
+        await FileSystem.deleteAsync(uri, { idempotent: true });
       } catch (error) {
         console.error('删除录音文件失败:', error);
       }
@@ -156,8 +155,11 @@ export function RecordingModal({ visible, onClose }: RecordingModalProps) {
       const text = await transcribeAudio(uri);
       console.log('handleConfirm: transcription result:', text);
       await createNote({ content: text, tags: [] });
-      const file = new File(uri);
-      file.delete();
+      try {
+        await FileSystem.deleteAsync(uri, { idempotent: true });
+      } catch (deleteError) {
+        console.error('转写后删除文件失败:', deleteError);
+      }
       showToast('转写成功', 'success');
       onClose();
     } catch (error) {

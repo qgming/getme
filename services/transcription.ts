@@ -41,8 +41,12 @@ export const transcribeAudio = async (audioUri: string): Promise<string> => {
                      extension === 'webm' ? 'audio/webm' :
                      extension === 'opus' ? 'audio/opus' : 'audio/mp4';
 
+    // 确保 URI 格式正确 (Android APK 环境下通常需要 file:// 前缀)
+    const formattedUri = audioUri.startsWith('file://') ? audioUri : `file://${audioUri}`;
+    console.log('[Transcription] 格式化后的URI:', formattedUri);
+
     formData.append('file', {
-      uri: audioUri,
+      uri: formattedUri,
       type: mimeType,
       name: `audio.${extension}`,
     } as any);
@@ -54,16 +58,29 @@ export const transcribeAudio = async (audioUri: string): Promise<string> => {
     console.log('[Transcription] 请求URL:', url);
     console.log('[Transcription] 使用模型ID:', defaultModel.modelId);
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${provider.apiKey}`,
-      },
-      body: formData,
-    });
+    console.log('[Transcription] 发送请求到:', url);
+    let response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${provider.apiKey}`,
+        },
+        body: formData,
+      });
+    } catch (fetchError) {
+      console.error('[Transcription] Fetch 错误:', fetchError);
+      if (url.startsWith('http://')) {
+        throw new Error(`网络请求失败: Android APK 默认禁止 HTTP 请求。请使用 HTTPS 或在 app.json 中配置 usesCleartextTraffic。错误: ${fetchError instanceof Error ? fetchError.message : '未知错误'}`);
+      }
+      throw new Error(`网络请求失败: ${fetchError instanceof Error ? fetchError.message : '未知错误'}`);
+    }
+
+    console.log('[Transcription] 响应状态码:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('[Transcription] 错误响应:', errorText);
       throw new Error(`转写失败: ${response.status} - ${errorText}`);
     }
 
