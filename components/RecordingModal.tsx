@@ -64,6 +64,8 @@ export function RecordingModal({ visible, onClose }: RecordingModalProps) {
     setIsTranscribing(false);
     setFinalDuration(0);
 
+    let cancelled = false;
+
     const start = async () => {
       try {
         const { granted } = await AudioModule.requestRecordingPermissionsAsync();
@@ -79,7 +81,9 @@ export function RecordingModal({ visible, onClose }: RecordingModalProps) {
         });
 
         await audioRecorder.prepareToRecordAsync();
-        audioRecorder.record();
+        if (!cancelled) {
+          audioRecorder.record();
+        }
       } catch (error) {
         console.error('录音启动失败:', error);
         showToast('录音启动失败', 'error');
@@ -90,11 +94,12 @@ export function RecordingModal({ visible, onClose }: RecordingModalProps) {
     start();
 
     return () => {
+      cancelled = true;
       if (audioRecorder.isRecording) {
         audioRecorder.stop();
       }
     };
-  }, [visible, audioRecorder, onClose]);
+  }, [visible]);
 
   const togglePause = () => {
     try {
