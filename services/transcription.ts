@@ -1,4 +1,4 @@
-import { getProviderById } from '../database/aiProviders';
+import { getProviderById, getModelById } from '../database/aiProviders';
 import { getDefaultModel } from '../database/defaultModels';
 
 export const transcribeAudio = async (audioUri: string): Promise<string> => {
@@ -10,6 +10,11 @@ export const transcribeAudio = async (audioUri: string): Promise<string> => {
 
     if (!defaultModel) {
       throw new Error('未配置转写模型，请先在设置中配置AI转写模型');
+    }
+
+    const model = await getModelById(defaultModel.modelId);
+    if (!model) {
+      throw new Error('转写模型不存在');
     }
 
     const provider = await getProviderById(defaultModel.providerId);
@@ -51,12 +56,12 @@ export const transcribeAudio = async (audioUri: string): Promise<string> => {
       name: `audio.${extension}`,
     } as any);
 
-    formData.append('model', defaultModel.modelId);
+    formData.append('model', model.modelId);
     formData.append('response_format', 'json');
 
     const url = `${provider.baseUrl}/audio/transcriptions`;
     console.log('[Transcription] 请求URL:', url);
-    console.log('[Transcription] 使用模型ID:', defaultModel.modelId);
+    console.log('[Transcription] 使用模型ID:', model.modelId);
 
     console.log('[Transcription] 发送请求到:', url);
     let response;

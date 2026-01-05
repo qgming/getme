@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
   ScrollView,
   StyleSheet,
@@ -69,7 +70,10 @@ export function AIConfigDrawer({ visible, onClose, onConfirm, editProvider }: AI
       <TouchableWithoutFeedback onPress={handleClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={[styles.container, { backgroundColor: colors.surface }]}>
+            <KeyboardAvoidingView
+              behavior="padding"
+              style={[styles.container, { backgroundColor: colors.surface }]}
+            >
               <View style={styles.header}>
                 <Text style={[styles.title, { color: colors.text }]}>
                   {editProvider ? '编辑AI配置' : '添加AI配置'}
@@ -168,7 +172,7 @@ export function AIConfigDrawer({ visible, onClose, onConfirm, editProvider }: AI
                   <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>确定</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </KeyboardAvoidingView>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>

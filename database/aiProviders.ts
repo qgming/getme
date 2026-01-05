@@ -93,6 +93,11 @@ export const getModelsByProvider = async (providerId: string): Promise<AIModel[]
   );
 };
 
+export const getModelById = async (id: string): Promise<AIModel | null> => {
+  const db = await initDatabase();
+  return await db.getFirstAsync<AIModel>('SELECT * FROM ai_models WHERE id = ?', [id]);
+};
+
 export const createModel = async (model: Omit<AIModel, 'id' | 'createdAt'>): Promise<AIModel> => {
   const db = await initDatabase();
   const now = new Date().toISOString();

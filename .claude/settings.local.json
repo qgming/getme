@@ -24,7 +24,12 @@
       "Bash(if exist \"app\\\\\\(tabs\\)\" rmdir \"app\\\\\\(tabs\\)\")",
       "Bash(find:*)",
       "Bash(if exist \"components\\\\AIConfigModal.tsx\" del \"components\\\\AIConfigModal.tsx\")",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(.gradlew:*)",
+      "Bash(tasklist:*)",
+      "Bash(./gradlew --stop:*)",
+      "Bash(java -version:*)",
+      "Bash(echo:*)"
     ]
   }
 }

@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import * as aiDb from './aiProviders';
 import * as defaultModels from './defaultModels';
 
@@ -7,7 +8,7 @@ export const initializeDefaultProviders = async () => {
   if (providers.length === 0) {
     const xiaomiMimo = await aiDb.createProvider({
       name: 'XiaomiMimo',
-      apiKey: '',
+      apiKey: Constants.expoConfig?.extra?.XIAOMIMIMO_API_KEY || '',
       baseUrl: 'https://api.xiaomimimo.com/v1',
       isEnabled: true,
       iconName: 'XiaomiMimo',
@@ -19,23 +20,9 @@ export const initializeDefaultProviders = async () => {
       name: 'MiMo V2 Flash',
     });
 
-    const deepseek = await aiDb.createProvider({
-      name: 'DeepSeek',
-      apiKey: '',
-      baseUrl: 'https://api.deepseek.com/v1',
-      isEnabled: true,
-      iconName: 'DeepSeek',
-    });
-
-    await aiDb.createModel({
-      modelId: 'deepseek-chat',
-      providerId: deepseek.id,
-      name: 'DeepSeek Chat',
-    });
-
     const siliconflow = await aiDb.createProvider({
       name: 'SiliconFlow',
-      apiKey: '',
+      apiKey: Constants.expoConfig?.extra?.SILICONFLOW_API_KEY || '',
       baseUrl: 'https://api.siliconflow.cn/v1',
       isEnabled: true,
       iconName: 'SiliconCloud',
@@ -53,7 +40,9 @@ export const initializeDefaultProviders = async () => {
       name: 'SenseVoiceSmall',
     });
 
-    await defaultModels.setDefaultModel('transcription', senseVoice.modelId, siliconflow.id);
-    await defaultModels.setDefaultModel('chat', mimoFlash.modelId, xiaomiMimo.id);
+    await defaultModels.setDefaultModel('transcription', senseVoice.id, siliconflow.id);
+    await defaultModels.setDefaultModel('insights', mimoFlash.id, xiaomiMimo.id);
+    await defaultModels.setDefaultModel('parallel', mimoFlash.id, xiaomiMimo.id);
+    await defaultModels.setDefaultModel('chat', mimoFlash.id, xiaomiMimo.id);
   }
 };

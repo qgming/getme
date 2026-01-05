@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Appearance } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useNoteStore, useThemeStore, useAIStore } from '../stores';
+import { useDefaultModelStore } from '../stores/defaultModelStore';
 import { initializeDefaultProviders } from '../database/seed';
 
 export default function RootLayout() {
@@ -12,16 +13,18 @@ export default function RootLayout() {
   const updateColorScheme = useThemeStore(state => state.updateColorScheme);
   const colorScheme = useThemeStore(state => state.colorScheme);
   const loadProviders = useAIStore(state => state.loadProviders);
+  const loadDefaultModels = useDefaultModelStore(state => state.loadDefaultModels);
 
   useEffect(() => {
     const init = async () => {
       await initialize();
       await initializeDefaultProviders();
       await loadProviders();
+      await loadDefaultModels();
       loadThemeMode();
     };
     init();
-  }, [initialize, loadThemeMode, loadProviders]);
+  }, [initialize, loadThemeMode, loadProviders, loadDefaultModels]);
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(() => {
