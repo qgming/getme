@@ -80,6 +80,17 @@ export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
         );
       `);
 
+      await dbInstance.runAsync(`
+        CREATE TABLE IF NOT EXISTS insight_records (
+          id TEXT PRIMARY KEY,
+          promptId TEXT NOT NULL,
+          promptTitle TEXT NOT NULL,
+          range TEXT NOT NULL,
+          content TEXT NOT NULL,
+          createdAt TEXT NOT NULL
+        );
+      `);
+
       return dbInstance;
     } catch (error) {
       dbInstance = null;

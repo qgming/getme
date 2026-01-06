@@ -50,6 +50,8 @@ export default function RootLayout() {
         <Stack.Screen name="note-editor" options={{ headerShown: false }} />
         <Stack.Screen name="search" options={{ headerShown: false }} />
         <Stack.Screen name="tag-notes" options={{ headerShown: false }} />
+        <Stack.Screen name="insight-result" options={{ headerShown: false }} />
+        <Stack.Screen name="insight-history" options={{ headerShown: false }} />
       </Stack>
     </GestureHandlerRootView>
   );
