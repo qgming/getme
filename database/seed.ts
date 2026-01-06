@@ -42,7 +42,7 @@ export const initializeDefaultProviders = async () => {
 
     await defaultModels.setDefaultModel('transcription', senseVoice.id, siliconflow.id);
     await defaultModels.setDefaultModel('insights', mimoFlash.id, xiaomiMimo.id);
-    await defaultModels.setDefaultModel('parallel', mimoFlash.id, xiaomiMimo.id);
-    await defaultModels.setDefaultModel('chat', mimoFlash.id, xiaomiMimo.id);
+    await defaultModels.setDefaultModel('avatar', mimoFlash.id, xiaomiMimo.id);
+    await defaultModels.setDefaultModel('tag', mimoFlash.id, xiaomiMimo.id);
   }
 };

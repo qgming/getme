@@ -19,8 +19,8 @@ import { useDefaultModelStore, AIFeature } from '../stores/defaultModelStore';
 const FEATURES: { key: AIFeature; label: string }[] = [
   { key: 'transcription', label: 'AI转写' },
   { key: 'insights', label: 'AI洞察' },
-  { key: 'parallel', label: '平行世界' },
-  { key: 'chat', label: 'AI聊天' },
+  { key: 'avatar', label: 'AI分身' },
+  { key: 'tag', label: 'AI标签' },
 ];
 
 export default function DefaultModelScreen() {

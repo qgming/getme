@@ -109,6 +109,32 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           : state.taggedNotes
       }));
 
+      // 异步生成AI标签（不阻塞笔记创建）
+      if (savedNote.content && savedNote.content.trim().length > 0) {
+        (async () => {
+          try {
+            const { generateTags } = await import('../services/aiTagging');
+            const aiTags = await generateTags(savedNote.content);
+
+            if (aiTags.length > 0) {
+              const existingTags = savedNote.tags || [];
+              const mergedTags = [...new Set([...existingTags, ...aiTags])];
+
+              const updatedNote = { ...savedNote, tags: mergedTags };
+              await saveNote(updatedNote);
+
+              set(state => ({
+                notes: state.notes.map(n => n.id === savedNote.id ? updatedNote : n)
+              }));
+
+              console.log('[AI标签] 自动生成标签:', aiTags);
+            }
+          } catch (error) {
+            console.error('[AI标签] 自动生成失败:', error);
+          }
+        })();
+      }
+
       return savedNote;
     } catch (error) {
       console.error('创建笔记失败:', error);
