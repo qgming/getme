@@ -21,7 +21,7 @@ export default function InsightResultScreen() {
   const [thinking, setThinking] = useState('');
   const records = useInsightStore(state => state.records);
 
-  const { promptId, promptTitle, range, tag, recordId } = params as { promptId?: string; promptTitle?: string; range?: string; tag?: string; recordId?: string };
+  const { promptId, promptTitle, range, tag, recordId, filters: filtersParam } = params as { promptId?: string; promptTitle?: string; range?: string; tag?: string; recordId?: string; filters?: string };
 
   useEffect(() => {
     if (recordId) {
@@ -36,6 +36,35 @@ export default function InsightResultScreen() {
   }, [recordId]);
 
   const getFilteredNotes = () => {
+    if (filtersParam) {
+      const filters = JSON.parse(filtersParam);
+      const now = new Date();
+      let result = notes;
+
+      if (filters.time) {
+        result = result.filter(n => {
+          const noteDate = new Date(n.createdAt);
+          const diffDays = (now.getTime() - noteDate.getTime()) / (1000 * 60 * 60 * 24);
+          if (filters.time === '最近7天') return diffDays <= 7;
+          if (filters.time === '最近15天') return diffDays <= 15;
+          if (filters.time === '最近30天') return diffDays <= 30;
+          if (filters.time === '最近100天') return diffDays <= 100;
+          if (filters.time === '最近365天') return diffDays <= 365;
+          return false;
+        });
+      } else if (filters.notes) {
+        let maxCount = 0;
+        if (filters.notes === '最近10条') maxCount = 10;
+        if (filters.notes === '最近50条') maxCount = 50;
+        if (filters.notes === '最近100条') maxCount = 100;
+        result = result.slice(0, maxCount);
+      } else if (filters.tags.length > 0) {
+        result = result.filter(n => n.tags?.some(tag => filters.tags.includes(tag)));
+      }
+
+      return result;
+    }
+
     const now = new Date();
     switch (range) {
       case 'recent7':
@@ -60,14 +89,13 @@ export default function InsightResultScreen() {
   const generateInsight = async () => {
     try {
       const prompt = INSIGHT_PROMPTS.find(p => p.id === promptId);
-      if (!prompt) return;
+      if (!prompt || !promptId || !promptTitle) return;
 
       const filteredNotes = getFilteredNotes();
-      const notesContent = filteredNotes.map(n => n.content).join('\n\n');
 
       const result = await generateAIInsight(
         prompt.systemPrompt,
-        notesContent,
+        filteredNotes,
         (msg) => setThinking(msg),
         (chunk) => setContent(prev => prev + chunk)
       );
@@ -77,7 +105,7 @@ export default function InsightResultScreen() {
       await saveRecord({
         promptId,
         promptTitle,
-        range: `${range}${tag ? `:${tag}` : ''}`,
+        range: filtersParam || `${range}${tag ? `:${tag}` : ''}`,
         content: result,
       });
     } catch (error) {
@@ -99,13 +127,16 @@ export default function InsightResultScreen() {
         <Text style={[styles.title, { color: colors.text }]}>
           {recordId ? records.find(r => r.id === recordId)?.promptTitle : promptTitle}
         </Text>
-        <View style={{ width: 24 }} />
+        {isStreaming ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : (
+          <View style={{ width: 24 }} />
+        )}
       </View>
 
       <ScrollView style={styles.container}>
         {thinking && (
           <View style={[styles.thinkingBox, { backgroundColor: colors.card }]}>
-            <ActivityIndicator size="small" color={colors.primary} />
             <Text style={[styles.thinkingText, { color: colors.textSecondary }]}>{thinking}</Text>
           </View>
         )}
@@ -125,12 +156,6 @@ export default function InsightResultScreen() {
           >
             {content}
           </MarkdownDisplay>
-        )}
-
-        {isStreaming && (
-          <View style={styles.streamingIndicator}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
         )}
       </ScrollView>
     </SafeAreaView>

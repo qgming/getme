@@ -1,10 +1,21 @@
 import { getProviderById, getModelById } from '../database/aiProviders';
 import { getDefaultModel } from '../database/defaultModels';
 import EventSource from 'react-native-sse';
+import { Note, formatFullDateTime } from '../types/Note';
+
+const formatNotesForAI = (notes: Note[]): string => {
+  return notes.map((note, index) => {
+    const number = index + 1;
+    const timestamp = formatFullDateTime(note.createdAt);
+    const tags = note.tags && note.tags.length > 0 ? note.tags.join(', ') : '无标签';
+
+    return `${number}. ${timestamp} | 标签: ${tags}\n${note.content}\n`;
+  }).join('\n');
+};
 
 export const generateInsight = async (
   systemPrompt: string,
-  notesContent: string,
+  notes: Note[],
   onThinking?: (message: string) => void,
   onStream?: (chunk: string) => void
 ): Promise<string> => {
@@ -17,6 +28,13 @@ export const generateInsight = async (
   if (!model || !provider || !provider.apiKey) {
     throw new Error('模型或提供商配置不完整');
   }
+
+  const formattedNotes = formatNotesForAI(notes);
+
+  console.log('=== AI洞察请求 ===');
+  console.log('系统提示词:', systemPrompt);
+  console.log('格式化笔记内容:\n', formattedNotes);
+  console.log('==================');
 
   onThinking?.('正在分析笔记内容...');
 
@@ -33,7 +51,7 @@ export const generateInsight = async (
         model: model.modelId,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `请分析以下笔记内容：\n\n${notesContent}` }
+          { role: 'user', content: `请分析以下笔记内容：\n\n${formattedNotes}` }
         ],
         stream: true,
       }),
