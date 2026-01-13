@@ -1,5 +1,5 @@
-import { MoreHorizontal, Hash } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { Hash, MoreHorizontal } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ScrollView,
@@ -11,11 +11,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
-import { DialogInput } from '../components/DialogInput';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CustomHeader } from '../components/CustomHeader';
-import { useNoteStore } from '../stores';
+import { DialogInput } from '../components/DialogInput';
 import { useTheme } from '../hooks/useTheme';
+import { useNoteStore } from '../stores';
 
 export default function DataStatisticsScreen() {
   const router = useRouter();
@@ -76,10 +76,8 @@ export default function DataStatisticsScreen() {
   }, [loadData]);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-
-      <CustomHeader title="数据统计" showBackButton />
 
       <ScrollView
         style={styles.container}
@@ -175,6 +173,10 @@ export default function DataStatisticsScreen() {
           </View>
         )}
       </ScrollView>
+
+      <SafeAreaView style={styles.headerContainer} pointerEvents="box-none">
+        <CustomHeader title="数据统计" showBackButton />
+      </SafeAreaView>
 
       {/* Action Menu */}
       <ActionMenu
@@ -286,7 +288,7 @@ export default function DataStatisticsScreen() {
         onCancel={() => setConfirmDeleteTagWithNotes(false)}
         isDestructive
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -298,7 +300,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    paddingTop: 100,
     paddingBottom: 20,
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
   statsContainer: {
     paddingHorizontal: 16,

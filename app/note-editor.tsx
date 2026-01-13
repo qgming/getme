@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Check, Hash, MoreHorizontal } from 'lucide-react-native';
+import { ArrowLeft, Check, Hash, MoreVertical, Sparkles } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -16,7 +16,6 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { CustomHeader } from '../components/CustomHeader';
 import { DialogInput } from '../components/DialogInput';
 import { Toast } from '../components/Toast';
 import { useTheme } from '../hooks/useTheme';
@@ -129,6 +128,13 @@ export default function NoteEditorScreen() {
     });
   };
 
+  const handleAIInsight = () => {
+    router.push({
+      pathname: '/ai-insights',
+      params: { noteId },
+    } as any);
+  };
+
   const showSaveButton = content.trim() !== originalContent.trim() || JSON.stringify(tags) !== JSON.stringify(originalTags);
 
   return (
@@ -141,42 +147,18 @@ export default function NoteEditorScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 56 + insets.top : 0}
       >
-        <CustomHeader
-          showBackButton={!showSaveButton}
-          leftElement={
-            showSaveButton ? (
-              <TouchableOpacity style={styles.saveButton} onPress={handleManualSave}>
-                <Check size={28} color={colors.primaryDark} />
-              </TouchableOpacity>
-            ) : undefined
-          }
-          rightElement={
-            <View style={styles.headerRight}>
-              {isSaving && <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />}
-              <TouchableOpacity style={styles.iconButton} onPress={() => setTagModalVisible(true)}>
-                <Hash size={24} color={colors.text} />
-              </TouchableOpacity>
-              <View ref={menuButtonRef}>
-                <TouchableOpacity style={styles.iconButton} onPress={handleShowMenu}>
-                  <MoreHorizontal size={24} color={colors.text} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          }
-        />
-
         <ScrollView
           ref={scrollViewRef}
-          style={[styles.contentContainer, { backgroundColor: colors.surface }]}
+          style={styles.contentContainer}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <View style={{ height: 56 }} />
           <Text style={[styles.dateText, { color: colors.textMuted }]}>
             {formatFullDateTime(createdAt)}
           </Text>
 
-          {/* 标签展示区 */}
           {tags.length > 0 && (
             <View style={styles.tagContainer}>
               {tags.map((tag, index) => (
@@ -191,7 +173,6 @@ export default function NoteEditorScreen() {
             </View>
           )}
 
-          {/* 关键修正 3: 使 TextInput 占据全部剩余空间，并禁用其内部滚动以防布局抖动 */}
           <TouchableWithoutFeedback onPress={() => textInputRef.current?.focus()}>
             <View style={styles.inputWrapper}>
               <TextInput
@@ -204,13 +185,37 @@ export default function NoteEditorScreen() {
                   setContent(text);
                 }}
                 multiline
-                scrollEnabled={false} // 重要：由 ScrollView 处理滚动，防止光标聚焦时出现额外空白 div
+                scrollEnabled={false}
                 textAlignVertical="top"
                 placeholderTextColor={colors.textMuted}
               />
             </View>
           </TouchableWithoutFeedback>
         </ScrollView>
+
+        <View style={styles.header}>
+          {showSaveButton ? (
+            <TouchableOpacity style={[styles.headerButton, styles.leftButton, { backgroundColor: colors.surface }]} onPress={handleManualSave}>
+              <Check size={24} color={colors.primary} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={[styles.headerButton, styles.leftButton, { backgroundColor: colors.surface }]} onPress={() => router.back()}>
+              <ArrowLeft size={24} color={colors.text} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.headerRight}>
+            {isSaving && <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 8 }} />}
+            <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surface }]} onPress={() => setTagModalVisible(true)}>
+              <Hash size={24} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surface }]} onPress={handleAIInsight}>
+              <Sparkles size={24} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity ref={menuButtonRef} style={[styles.headerButton, { backgroundColor: colors.surface }]} onPress={handleShowMenu}>
+              <MoreVertical size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </KeyboardAvoidingView>
 
       {/* --- 浮层组件 --- */}
@@ -230,15 +235,45 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 56,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  leftButton: {
+    position: 'absolute',
+    left: 20,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerRight: {
+    position: 'absolute',
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   contentContainer: {
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1, // 确保即使内容少，点击底部也能聚焦
+    flexGrow: 1,
   },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  saveButton: { padding: 4 },
-  iconButton: { padding: 4 },
   dateText: { fontSize: 14, marginBottom: 4, marginTop: 12, paddingHorizontal: 20 },
   inputWrapper: {
     flex: 1,
@@ -246,10 +281,10 @@ const styles = StyleSheet.create({
   contentInput: {
     fontSize: 18,
     lineHeight: 26,
-    flex: 1, 
+    flex: 1,
     paddingHorizontal: 18,
     paddingTop: 10,
-    paddingBottom: 60, // 底部留出足够空间，确保内容不会被手势条遮挡
+    paddingBottom: 60,
     minHeight: 200,
   },
   tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 4, paddingHorizontal: 18 },

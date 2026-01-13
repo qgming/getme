@@ -45,7 +45,19 @@ const NoteCardComponent: React.FC<NoteCardProps> = ({ note, onPress, onDelete })
     setShowMenu(true);
   };
 
+  const handleAIInsight = () => {
+    router.push({
+      pathname: '/ai-insights',
+      params: { noteId: note.id },
+    } as any);
+  };
+
   const menuActions: ActionItem[] = [
+    {
+      label: 'AI洞察',
+      icon: 'sparkles-outline',
+      onPress: handleAIInsight,
+    },
     {
       label: '复制笔记',
       icon: 'copy-outline',

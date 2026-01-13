@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import { BarChart3, FileText, Menu, Search, Sparkles } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   ScrollView,
   StatusBar,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddNoteDrawer } from '../components/AddNoteDrawer';
+import { CustomHeader } from '../components/CustomHeader';
 import { FloatingAddButton } from '../components/FloatingAddButton';
 import { NoteCard } from '../components/NoteCard';
 import { Toast, setGlobalToastHandler } from '../components/Toast';
@@ -22,7 +22,6 @@ import { useNoteStore } from '../stores';
 export default function HomeScreen() {
   const router = useRouter();
   const notes = useNoteStore(state => state.notes);
-  const loading = useNoteStore(state => state.loading);
   const deleteNoteById = useNoteStore(state => state.deleteNoteById);
   const { colors } = useTheme();
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -72,18 +71,6 @@ export default function HomeScreen() {
     </View>
   );
 
-  // 渲染加载状态
-  if (loading) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={[styles.loadingContainer, { backgroundColor: colors.surface }]}>
-          <ActivityIndicator size="large" color={colors.primaryDark} />
-          <Text style={[styles.loadingText, { color: colors.textQuaternary }]}>正在加载...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   // 渲染顶部按钮
   const renderHeader = () => (
     <ScrollView
@@ -120,25 +107,9 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      {/* 顶部导航栏 */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => router.push('/settings' as any)} style={styles.iconButton}>
-          <Menu size={24} color={colors.text} />
-        </TouchableOpacity>
-
-        <View style={styles.titleContainer}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Getme</Text>
-        </View>
-
-        <TouchableOpacity onPress={handleSearch} style={styles.iconButton}>
-          <Search size={24} color={colors.text} />
-        </TouchableOpacity>
-      </View>
-
-      {/* 笔记列表 */}
       <FlatList
         data={sortedNotes}
         renderItem={renderNoteItem}
@@ -148,6 +119,16 @@ export default function HomeScreen() {
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyComponent}
       />
+
+      <SafeAreaView style={styles.headerContainer} pointerEvents="box-none">
+        <CustomHeader
+          title="Getme"
+          leftElement={<Menu size={24} color={colors.text} />}
+          onLeftPress={() => router.push('/settings' as any)}
+          rightElement={<Search size={24} color={colors.text} />}
+          onRightPress={handleSearch}
+        />
+      </SafeAreaView>
 
       {/* 浮动添加按钮 */}
       <FloatingAddButton
@@ -163,7 +144,7 @@ export default function HomeScreen() {
         duration={toast.duration}
         onHide={() => setToast({ ...toast, visible: false })}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -171,24 +152,12 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  iconButton: {
-    padding: 4,
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
   topButtons: {
     paddingTop: 12,
@@ -213,6 +182,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   listContent: {
+    paddingTop: 90,
     paddingBottom: 80,
   },
   emptyContainer: {
@@ -230,14 +200,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
     textAlign: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
   },
 });

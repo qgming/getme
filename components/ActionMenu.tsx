@@ -95,20 +95,21 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
           ]}
         >
           {actions.map((action, index) => {
-            const iconMap: Record<string, keyof typeof LucideIcons> = {
-              'copy-outline': 'Copy',
-              'trash-outline': 'Trash',
-              'create-outline': 'Edit',
-              'checkmark-circle-outline': 'CheckCircle',
-              'close-circle-outline': 'XCircle',
-              'share-outline': 'Share',
-              'push-outline': 'Pin',
-              'pricetag-outline': 'Tag',
-              'sunny-outline': 'Sun',
-              'moon-outline': 'Moon',
-              'phone-portrait-outline': 'Smartphone',
+            const iconMap: Record<string, React.ComponentType<any>> = {
+              'sparkles-outline': LucideIcons.Sparkles,
+              'copy-outline': LucideIcons.Copy,
+              'trash-outline': LucideIcons.Trash,
+              'create-outline': LucideIcons.Edit,
+              'checkmark-circle-outline': LucideIcons.CheckCircle,
+              'close-circle-outline': LucideIcons.XCircle,
+              'share-outline': LucideIcons.Share,
+              'push-outline': LucideIcons.Pin,
+              'pricetag-outline': LucideIcons.Tag,
+              'sunny-outline': LucideIcons.Sun,
+              'moon-outline': LucideIcons.Moon,
+              'phone-portrait-outline': LucideIcons.Smartphone,
             };
-            const IconComponent = LucideIcons[iconMap[action.icon] || 'HelpCircle' as keyof typeof LucideIcons] as any;
+            const IconComponent = iconMap[action.icon] || LucideIcons.HelpCircle;
 
             return (
               <Pressable

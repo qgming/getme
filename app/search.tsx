@@ -1,5 +1,5 @@
-import { Search, FileText, ArrowLeft, XCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { ArrowLeft, FileText, Search, XCircle } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   FlatList,
@@ -13,9 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NoteCard } from '../components/NoteCard';
 import { Toast } from '../components/Toast';
+import { useTheme } from '../hooks/useTheme';
 import { useNoteStore } from '../stores';
 import { Note } from '../types/Note';
-import { useTheme } from '../hooks/useTheme';
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -132,47 +132,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      {/* 顶部搜索栏 */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          activeOpacity={0.7}
-        >
-          <ArrowLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-
-        <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Search
-            size={20}
-            color={colors.textQuaternary}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder="搜索笔记..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoFocus
-            placeholderTextColor={colors.textQuaternary}
-            returnKeyType="search"
-            onSubmitEditing={() => Keyboard.dismiss()}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={() => setSearchQuery('')}
-              activeOpacity={0.7}
-            >
-              <XCircle size={20} color={colors.textQuaternary} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       {/* 搜索结果列表 */}
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {renderSearchStats()}
@@ -181,10 +141,54 @@ export default function SearchScreen() {
           renderItem={renderSearchResult}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={searchResults.length === 0 ? styles.emptyListContent : styles.listContent}
           ListEmptyComponent={renderEmptyComponent}
         />
       </View>
+
+      <SafeAreaView style={styles.headerContainer} pointerEvents="box-none">
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: colors.surface }]}
+            onPress={handleBack}
+            activeOpacity={0.7}
+          >
+            <ArrowLeft size={24} color={colors.text} />
+          </TouchableOpacity>
+
+          <View style={[styles.searchInputContainer, { backgroundColor: colors.surface }]}>
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="搜索笔记..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus
+              placeholderTextColor={colors.textQuaternary}
+              returnKeyType="search"
+              onSubmitEditing={() => Keyboard.dismiss()}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => setSearchQuery('')}
+                activeOpacity={0.7}
+              >
+                <XCircle size={18} color={colors.textQuaternary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.searchButton, { backgroundColor: colors.surface }]}
+            onPress={() => Keyboard.dismiss()}
+            activeOpacity={0.7}
+          >
+            <Search size={24} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
       <Toast
         visible={toast.visible}
@@ -192,7 +196,7 @@ export default function SearchScreen() {
         type={toast.type}
         onHide={() => setToast({ ...toast, visible: false })}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -200,41 +204,72 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
   header: {
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
     gap: 12,
+    backgroundColor: 'transparent',
   },
   backButton: {
-    padding: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 44,
-    borderWidth: 1,
-  },
-  searchIcon: {
-    marginRight: 10,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    height: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
   },
   clearButton: {
-    padding: 2,
+    padding: 4,
   },
   container: {
     flex: 1,
   },
   statsContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 90,
+    paddingBottom: 10,
   },
   statsText: {
     fontSize: 13,
@@ -242,12 +277,14 @@ const styles = StyleSheet.create({
   listContent: {
     paddingVertical: 12,
   },
+  emptyListContent: {
+    flexGrow: 1,
+  },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 40,
-    marginTop: 60,
   },
   emptyText: {
     marginTop: 16,

@@ -1,8 +1,9 @@
-import { useRouter } from 'expo-router';
-import { ArrowLeft, Filter, History } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Filter, History } from 'lucide-react-native';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Dimensions, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CustomHeader } from '../components/CustomHeader';
 import PromptInfoDrawer from '../components/PromptInfoDrawer';
 import RangeFilterDrawer, { RangeFilter } from '../components/RangeFilterDrawer';
 import { useTheme } from '../hooks/useTheme';
@@ -14,6 +15,7 @@ const cardSize = (width - 48) / 2;
 
 export default function AIInsightsScreen() {
   const router = useRouter();
+  const { noteId } = useLocalSearchParams();
   const { colors } = useTheme();
   const notes = useNoteStore(state => state.notes);
   const getAllTags = useNoteStore(state => state.getAllTags);
@@ -23,7 +25,17 @@ export default function AIInsightsScreen() {
   const [selectedPrompt, setSelectedPrompt] = useState<InsightPrompt | null>(null);
   const [filters, setFilters] = useState<RangeFilter>({ time: '最近7天', notes: '', tags: [] });
 
+  useEffect(() => {
+    if (noteId) {
+      setFilters({ time: '', notes: '', tags: [], noteId: noteId as string });
+    }
+  }, [noteId]);
+
   const filteredNotes = useMemo(() => {
+    if (filters.noteId) {
+      return notes.filter(n => n.id === filters.noteId);
+    }
+
     if (!filters.time && !filters.notes && filters.tags.length === 0) {
       return notes;
     }
@@ -81,23 +93,10 @@ export default function AIInsightsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-          <ArrowLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>AI洞察</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => router.push('/insight-history' as any)} style={styles.iconButton}>
-            <History size={24} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         {/* Stats */}
         <View style={[styles.statsContainer, { backgroundColor: colors.surface }]}>
           <View style={styles.statsContent}>
@@ -134,6 +133,15 @@ export default function AIInsightsScreen() {
         </View>
       </ScrollView>
 
+      <SafeAreaView style={styles.headerContainer} pointerEvents="box-none">
+        <CustomHeader
+          title="AI洞察"
+          showBackButton
+          rightElement={<History size={24} color={colors.text} />}
+          onRightPress={() => router.push('/insight-history' as any)}
+        />
+      </SafeAreaView>
+
       <RangeFilterDrawer
         visible={showDrawer}
         onClose={() => setShowDrawer(false)}
@@ -148,7 +156,7 @@ export default function AIInsightsScreen() {
         onClose={handleCloseDetailDrawer}
         onStartInsight={handleStartInsight}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -156,46 +164,19 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  iconButton: {
-    padding: 4,
-    position: 'relative',
-  },
-  badge: {
+  headerContainer: {
     position: 'absolute',
     top: 0,
+    left: 0,
     right: 0,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
+    zIndex: 10,
   },
   container: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  scrollContent: {
+    paddingTop: 100,
   },
   statsContainer: {
     paddingVertical: 16,

@@ -5,7 +5,6 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomHeader } from '../components/CustomHeader';
@@ -66,15 +65,8 @@ export default function AISettingsScreen() {
         <CustomHeader
           title="AI设置"
           showBackButton
-          rightElement={
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => setModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Plus size={28} color={colors.accent} />
-            </TouchableOpacity>
-          }
+          rightElement={<Plus size={24} color={colors.text} />}
+          onRightPress={() => setModalVisible(true)}
         />
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -118,8 +110,5 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingTop: 12,
-  },
-  addButton: {
-    padding: 4,
   },
 });

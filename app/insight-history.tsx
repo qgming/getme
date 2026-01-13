@@ -1,8 +1,9 @@
-import { ArrowLeft, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { Trash2 } from 'lucide-react-native';
 import React, { useEffect } from 'react';
-import { StatusBar, StyleSheet, Text, TouchableOpacity, View, FlatList } from 'react-native';
+import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CustomHeader } from '../components/CustomHeader';
 import { useTheme } from '../hooks/useTheme';
 import { useInsightStore } from '../stores';
 import { InsightRecord } from '../types/Insight';
@@ -54,17 +55,8 @@ export default function InsightHistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>洞察记录</Text>
-        <View style={{ width: 24 }} />
-      </View>
 
       <FlatList
         data={records}
@@ -77,7 +69,11 @@ export default function InsightHistoryScreen() {
           </View>
         }
       />
-    </SafeAreaView>
+
+      <SafeAreaView style={styles.headerContainer} pointerEvents="box-none">
+        <CustomHeader title="洞察记录" showBackButton />
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -85,19 +81,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
   list: {
     padding: 16,
+    paddingTop: 100,
     gap: 12,
   },
   recordCard: {

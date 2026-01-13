@@ -1,13 +1,13 @@
-import { ArrowLeft } from 'lucide-react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { StatusBar, StyleSheet, Text, TouchableOpacity, View, ScrollView, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import MarkdownDisplay from 'react-native-markdown-display';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CustomHeader } from '../components/CustomHeader';
 import { useTheme } from '../hooks/useTheme';
-import { INSIGHT_PROMPTS } from '../types/Insight';
-import { useNoteStore, useInsightStore } from '../stores';
 import { generateInsight as generateAIInsight } from '../services/aiInsights';
+import { useInsightStore, useNoteStore } from '../stores';
+import { INSIGHT_PROMPTS } from '../types/Insight';
 
 export default function InsightResultScreen() {
   const router = useRouter();
@@ -116,25 +116,10 @@ export default function InsightResultScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>
-          {recordId ? records.find(r => r.id === recordId)?.promptTitle : promptTitle}
-        </Text>
-        {isStreaming ? (
-          <ActivityIndicator size="small" color={colors.primary} />
-        ) : (
-          <View style={{ width: 24 }} />
-        )}
-      </View>
-
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         {thinking && (
           <View style={[styles.thinkingBox, { backgroundColor: colors.card }]}>
             <Text style={[styles.thinkingText, { color: colors.textSecondary }]}>{thinking}</Text>
@@ -158,7 +143,21 @@ export default function InsightResultScreen() {
           </MarkdownDisplay>
         )}
       </ScrollView>
-    </SafeAreaView>
+
+      <SafeAreaView style={styles.headerContainer} pointerEvents="box-none">
+        <CustomHeader
+          title={recordId ? records.find(r => r.id === recordId)?.promptTitle : promptTitle}
+          showBackButton
+          rightElement={
+            isStreaming ? (
+              <View style={styles.loadingButton}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : null
+          }
+        />
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -166,20 +165,26 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
+  loadingButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  scrollContent: {
+    paddingTop: 100,
   },
   thinkingBox: {
     flexDirection: 'row',

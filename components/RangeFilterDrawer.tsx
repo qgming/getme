@@ -7,6 +7,7 @@ export interface RangeFilter {
   time: string;
   notes: string;
   tags: string[];
+  noteId?: string;
 }
 
 interface RangeFilterDrawerProps {
