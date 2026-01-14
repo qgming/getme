@@ -17,6 +17,16 @@ import { DialogInput } from '../components/DialogInput';
 import { useTheme } from '../hooks/useTheme';
 import { useNoteStore } from '../stores';
 
+// Format word count for display
+const formatWordCount = (count: number): string => {
+  if (count >= 100000) {
+    return (count / 10000).toFixed(1) + 'W';
+  } else if (count >= 10000) {
+    return (count / 1000).toFixed(1) + 'K';
+  }
+  return count.toString();
+};
+
 export default function DataStatisticsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -32,7 +42,9 @@ export default function DataStatisticsScreen() {
     notes: 0,
     tags: 0,
     days: 0,
+    words: 0,
   });
+  const [heatmapData, setHeatmapData] = useState<number[][]>([]);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showActionMenu, setShowActionMenu] = useState(false);
@@ -50,21 +62,73 @@ export default function DataStatisticsScreen() {
       const tags = getAllTags();
       const notes = useNoteStore.getState().notes;
 
-      let daysDiff = 0;
+      // Count unique dates (different note dates count as separate days)
+      let uniqueDays = 0;
       if (notes.length > 0) {
-        const oldestNote = notes.reduce((oldest, note) =>
-          new Date(note.createdAt) < new Date(oldest.createdAt) ? note : oldest
+        const uniqueDates = new Set(
+          notes.map(note => {
+            const date = new Date(note.createdAt);
+            // Format as YYYY-MM-DD to ensure same day notes are counted once
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          })
         );
-        const firstNoteDate = new Date(oldestNote.createdAt);
-        const today = new Date();
-        daysDiff = Math.floor((today.getTime() - firstNoteDate.getTime()) / (1000 * 60 * 60 * 24));
+        uniqueDays = uniqueDates.size;
+      }
+
+      // Calculate total word count
+      const totalWords = notes.reduce((sum, note) => {
+        return sum + (note.content?.length || 0);
+      }, 0);
+
+      // Calculate heatmap data for current month (5 rows x 7 columns)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+
+      // Get the day of week for the first day (0 = Sunday, 6 = Saturday)
+      const firstDayOfWeek = firstDay.getDay();
+
+      // Create a map of date -> note count
+      const noteCounts = new Map<string, number>();
+      notes.forEach(note => {
+        const noteDate = new Date(note.createdAt);
+        if (noteDate.getFullYear() === year && noteDate.getMonth() === month) {
+          const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(noteDate.getDate()).padStart(2, '0')}`;
+          noteCounts.set(dateKey, (noteCounts.get(dateKey) || 0) + 1);
+        }
+      });
+
+      // Build 5x7 grid (5 rows, 7 columns, starting with Sunday)
+      const heatmap: number[][] = [];
+      const totalDays = lastDay.getDate();
+
+      for (let row = 0; row < 5; row++) {
+        const weekRow: number[] = [];
+        for (let col = 0; col < 7; col++) {
+          // Calculate which day this cell represents
+          const dayIndex = row * 7 + col;
+          const actualDay = dayIndex - firstDayOfWeek + 1;
+
+          if (actualDay < 1 || actualDay > totalDays) {
+            // Empty cell (before month starts or after month ends)
+            weekRow.push(-1);
+          } else {
+            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(actualDay).padStart(2, '0')}`;
+            weekRow.push(noteCounts.get(dateKey) || 0);
+          }
+        }
+        heatmap.push(weekRow);
       }
 
       setStats({
         notes: notes.length,
         tags: tags.length,
-        days: daysDiff,
+        days: uniqueDays,
+        words: totalWords,
       });
+      setHeatmapData(heatmap);
       setAllTags(tags);
     } catch (error) {
       console.error('加载数据失败:', error);
@@ -91,12 +155,68 @@ export default function DataStatisticsScreen() {
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>笔记</Text>
             </View>
             <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{stats.days}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>天</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{formatWordCount(stats.words)}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>字</Text>
+            </View>
+            <View style={styles.statItem}>
               <Text style={[styles.statValue, { color: colors.text }]}>{stats.tags}</Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>标签</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{stats.days}</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>天</Text>
+          </View>
+        </View>
+
+        {/* Heatmap Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>本月笔记</Text>
+          <View style={[styles.heatmapContainer, { backgroundColor: colors.surface }]}>
+            {/* Week day labels */}
+            <View style={styles.weekLabels}>
+              {['日', '一', '二', '三', '四', '五', '六'].map((day, index) => (
+                <Text key={index} style={[styles.weekLabel, { color: colors.textSecondary }]}>
+                  {day}
+                </Text>
+              ))}
+            </View>
+            {/* Heatmap grid */}
+            <View style={styles.heatmapGrid}>
+              {heatmapData.map((week, rowIndex) => (
+                <View key={rowIndex} style={styles.heatmapRow}>
+                  {week.map((count, colIndex) => {
+                    // Determine color intensity based on note count
+                    let cellColor = colors.border;
+                    if (count === -1) {
+                      // Empty cell (outside current month)
+                      cellColor = 'transparent';
+                    } else if (count === 0) {
+                      // No notes
+                      cellColor = colors.border;
+                    } else if (count <= 2) {
+                      // 1-2 notes - light (30% opacity)
+                      cellColor = colors.primary + '4D';
+                    } else if (count <= 5) {
+                      // 3-5 notes - medium (60% opacity)
+                      cellColor = colors.primary + '99';
+                    } else {
+                      // 6+ notes - full color
+                      cellColor = colors.primary;
+                    }
+
+                    return (
+                      <View
+                        key={colIndex}
+                        style={[
+                          styles.heatmapCell,
+                          { backgroundColor: cellColor }
+                        ]}
+                      />
+                    );
+                  })}
+                </View>
+              ))}
             </View>
           </View>
         </View>
@@ -365,5 +485,33 @@ const styles = StyleSheet.create({
   },
   moreButton: {
     padding: 4,
+  },
+  heatmapContainer: {
+    borderRadius: 12,
+    padding: 16,
+  },
+  weekLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 8,
+  },
+  weekLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    width: 36,
+    textAlign: 'center',
+  },
+  heatmapGrid: {
+    gap: 4,
+  },
+  heatmapRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 4,
+  },
+  heatmapCell: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
   },
 });

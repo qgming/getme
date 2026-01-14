@@ -3,8 +3,6 @@ import { ArrowLeft, Check, Hash, MoreVertical, Sparkles } from 'lucide-react-nat
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,7 +11,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DialogInput } from '../components/DialogInput';
@@ -26,7 +24,6 @@ export default function NoteEditorScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const params = useLocalSearchParams();
-  const insets = useSafeAreaInsets(); // 获取状态栏和底部手势条的精确高度
   const { updateNote, deleteNoteById, getNoteById } = useNoteStore();
 
   // --- 状态与引用 ---
@@ -138,15 +135,8 @@ export default function NoteEditorScreen() {
   const showSaveButton = content.trim() !== originalContent.trim() || JSON.stringify(tags) !== JSON.stringify(originalTags);
 
   return (
-    // 关键修正 1: edges 只包含 top，彻底防止底部安全区域与键盘避让冲突产生空白
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
-      
-      {/* 关键修正 2: 精准设置 Offset。Offset = Header(约56) + 顶部安全区 */}
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 56 + insets.top : 0}
-      >
+      <View style={styles.container}>
         <ScrollView
           ref={scrollViewRef}
           style={styles.contentContainer}
@@ -216,7 +206,7 @@ export default function NoteEditorScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
 
       {/* --- 浮层组件 --- */}
       <ActionMenu visible={menuVisible} onClose={() => setMenuVisible(false)} anchorPosition={anchorPosition} actions={[{ label: '分享', icon: 'share-outline', onPress: () => {} }, { label: '删除', icon: 'trash-outline', onPress: () => setConfirmDeleteNote(true), isDestructive: true }]} />
@@ -273,6 +263,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 400,
   },
   dateText: { fontSize: 14, marginBottom: 4, marginTop: 12, paddingHorizontal: 20 },
   inputWrapper: {
@@ -284,7 +275,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 18,
     paddingTop: 10,
-    paddingBottom: 60,
+    paddingBottom: 20,
     minHeight: 200,
   },
   tagContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 4, paddingHorizontal: 18 },

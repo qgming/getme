@@ -91,6 +91,14 @@ export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
         );
       `);
 
+      await dbInstance.runAsync(`
+        CREATE TABLE IF NOT EXISTS db_version (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          version INTEGER NOT NULL,
+          updatedAt TEXT NOT NULL
+        );
+      `);
+
       return dbInstance;
     } catch (error) {
       dbInstance = null;

@@ -1,19 +1,18 @@
 import { useRouter } from 'expo-router';
-import { BarChart3, FileText, Menu, Search, Sparkles } from 'lucide-react-native';
+import { FileText, Menu, Search } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   FlatList,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddNoteDrawer } from '../components/AddNoteDrawer';
 import { CustomHeader } from '../components/CustomHeader';
 import { FloatingAddButton } from '../components/FloatingAddButton';
+import { HomeActionButtons } from '../components/HomeActionButtons';
 import { NoteCard } from '../components/NoteCard';
 import { Toast, setGlobalToastHandler } from '../components/Toast';
 import { useTheme } from '../hooks/useTheme';
@@ -72,30 +71,7 @@ export default function HomeScreen() {
   );
 
   // 渲染顶部按钮
-  const renderHeader = () => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.topButtons}
-      contentContainerStyle={styles.topButtonsContent}
-    >
-      <TouchableOpacity
-        style={[styles.topButton, { backgroundColor: colors.surface }]}
-        onPress={() => router.push('/ai-insights' as any)}
-      >
-        <Sparkles size={20} color={colors.text} />
-        <Text style={[styles.topButtonText, { color: colors.text }]}>AI 洞察</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.topButton, { backgroundColor: colors.surface }]}
-        onPress={() => router.push('/statistics' as any)}
-      >
-        <BarChart3 size={20} color={colors.text} />
-        <Text style={[styles.topButtonText, { color: colors.text }]}>数据统计</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+  const renderHeader = () => <HomeActionButtons />;
 
   // 渲染笔记列表项
   const renderNoteItem = ({ item }: { item: any }) => (
@@ -158,28 +134,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-  },
-  topButtons: {
-    paddingTop: 12,
-    paddingBottom: 6,
-  },
-  topButtonsContent: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  topButton: {
-    width: 110,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    gap: 6,
-  },
-  topButtonText: {
-    fontSize: 15,
-    fontWeight: '500',
   },
   listContent: {
     paddingTop: 90,

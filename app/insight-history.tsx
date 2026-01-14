@@ -17,7 +17,7 @@ export default function InsightHistoryScreen() {
 
   useEffect(() => {
     loadRecords();
-  }, []);
+  }, [loadRecords]);
 
   const handleRecordPress = (record: InsightRecord) => {
     router.push({

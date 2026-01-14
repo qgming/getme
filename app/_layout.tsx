@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import { useNoteStore, useThemeStore, useAIStore } from '../stores';
 import { useDefaultModelStore } from '../stores/defaultModelStore';
-import { initializeDefaultProviders } from '../database/seed';
+import { runMigrations } from '../database/migrations';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,7 +23,7 @@ export default function RootLayout() {
     const init = async () => {
       try {
         await initialize();
-        await initializeDefaultProviders();
+        await runMigrations();
         await loadProviders();
         await loadDefaultModels();
         loadThemeMode();
@@ -57,6 +57,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="ai-avatar" options={{ headerShown: false }} />
         <Stack.Screen name="ai-insights" options={{ headerShown: false }} />
         <Stack.Screen name="ai-settings" options={{ headerShown: false }} />
         <Stack.Screen name="statistics" options={{ headerShown: false }} />

@@ -1,7 +1,7 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
-import MarkdownDisplay from 'react-native-markdown-display';
+import Markdown from 'react-native-markdown-display';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomHeader } from '../components/CustomHeader';
 import { useTheme } from '../hooks/useTheme';
@@ -10,7 +10,6 @@ import { useInsightStore, useNoteStore } from '../stores';
 import { INSIGHT_PROMPTS } from '../types/Insight';
 
 export default function InsightResultScreen() {
-  const router = useRouter();
   const params = useLocalSearchParams();
   const { colors } = useTheme();
   const notes = useNoteStore(state => state.notes);
@@ -21,25 +20,33 @@ export default function InsightResultScreen() {
   const [thinking, setThinking] = useState('');
   const records = useInsightStore(state => state.records);
 
+  // 用于节流更新的 ref
+  const contentBufferRef = useRef('');
+  const updateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 标记是否已经开始生成，防止重复执行
+  const hasStartedRef = useRef(false);
+
   const { promptId, promptTitle, range, tag, recordId, filters: filtersParam } = params as { promptId?: string; promptTitle?: string; range?: string; tag?: string; recordId?: string; filters?: string };
 
+  // 清理定时器
   useEffect(() => {
-    if (recordId) {
-      const record = records.find(r => r.id === recordId);
-      if (record) {
-        setContent(record.content);
-        setIsStreaming(false);
+    return () => {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
       }
-    } else {
-      generateInsight();
-    }
-  }, [recordId]);
+    };
+  }, []);
 
-  const getFilteredNotes = () => {
+  const getFilteredNotes = useCallback(() => {
     if (filtersParam) {
       const filters = JSON.parse(filtersParam);
       const now = new Date();
       let result = notes;
+
+      // 如果有指定的 noteId，只返回该笔记
+      if (filters.noteId) {
+        return notes.filter(n => n.id === filters.noteId);
+      }
 
       if (filters.time) {
         result = result.filter(n => {
@@ -84,23 +91,40 @@ export default function InsightResultScreen() {
       default:
         return notes;
     }
-  };
+  }, [filtersParam, notes, range, tag]);
 
-  const generateInsight = async () => {
+  const generateInsight = useCallback(async () => {
     try {
       const prompt = INSIGHT_PROMPTS.find(p => p.id === promptId);
       if (!prompt || !promptId || !promptTitle) return;
 
       const filteredNotes = getFilteredNotes();
 
+      // 重置缓冲区
+      contentBufferRef.current = '';
+
       const result = await generateAIInsight(
         prompt.systemPrompt,
         filteredNotes,
         (msg) => setThinking(msg),
-        (chunk) => setContent(prev => prev + chunk)
+        (chunk) => {
+          // 直接在这里实现节流逻辑，避免依赖外部函数
+          contentBufferRef.current += chunk;
+          if (!updateTimerRef.current) {
+            updateTimerRef.current = setTimeout(() => {
+              setContent(contentBufferRef.current);
+              updateTimerRef.current = null;
+            }, 150);
+          }
+        }
       );
 
-      setIsStreaming(false);
+      // 流式传输完成后，刷新所有剩余内容
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+        updateTimerRef.current = null;
+      }
+      setContent(contentBufferRef.current);
 
       await saveRecord({
         promptId,
@@ -108,12 +132,33 @@ export default function InsightResultScreen() {
         range: filtersParam || `${range}${tag ? `:${tag}` : ''}`,
         content: result,
       });
+
+      // 确保所有内容更新和保存完成后才关闭加载状态
+      setTimeout(() => {
+        setIsStreaming(false);
+      }, 200);
     } catch (error) {
       console.error('生成洞察失败:', error);
       setContent('生成洞察时出错，请重试。');
       setIsStreaming(false);
     }
-  };
+  }, [promptId, promptTitle, range, tag, filtersParam, saveRecord, getFilteredNotes]);
+
+  useEffect(() => {
+    if (recordId) {
+      const record = records.find(r => r.id === recordId);
+      if (record) {
+        setContent(record.content);
+        setIsStreaming(false);
+      }
+    } else {
+      // 只在第一次执行时生成洞察
+      if (!hasStartedRef.current) {
+        hasStartedRef.current = true;
+        generateInsight();
+      }
+    }
+  }, [recordId, records, generateInsight]);
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -127,20 +172,25 @@ export default function InsightResultScreen() {
         )}
 
         {content && (
-          <MarkdownDisplay
+          <Markdown
             style={{
-              body: { color: colors.text, fontSize: 16, lineHeight: 24 },
-              heading1: { color: colors.text, fontSize: 24, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
-              heading2: { color: colors.text, fontSize: 20, fontWeight: 'bold', marginTop: 12, marginBottom: 6 },
-              heading3: { color: colors.text, fontSize: 18, fontWeight: '600', marginTop: 10, marginBottom: 4 },
-              paragraph: { color: colors.text, marginBottom: 12 },
-              list_item: { color: colors.text, marginBottom: 4 },
+              body: { color: colors.text },
+              heading1: { color: colors.text, fontSize: 24, fontWeight: 'bold', marginVertical: 12 },
+              heading2: { color: colors.text, fontSize: 22, fontWeight: 'bold', marginVertical: 10 },
+              heading3: { color: colors.text, fontSize: 20, fontWeight: 'bold', marginVertical: 8 },
+              paragraph: { color: colors.text, fontSize: 18, lineHeight: 24, marginVertical: 4 },
+              strong: { fontWeight: 'bold' },
+              em: { fontStyle: 'italic' },
               code_inline: { backgroundColor: colors.card, color: colors.primary, paddingHorizontal: 4, borderRadius: 4 },
               code_block: { backgroundColor: colors.card, padding: 12, borderRadius: 8, marginVertical: 8 },
+              fence: { backgroundColor: colors.card, padding: 12, borderRadius: 8, marginVertical: 8 },
+              bullet_list: { marginVertical: 8 },
+              ordered_list: { marginVertical: 8 },
+              list_item: { marginVertical: 4 },
             }}
           >
             {content}
-          </MarkdownDisplay>
+          </Markdown>
         )}
       </ScrollView>
 
@@ -185,6 +235,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 100,
+    paddingBottom: 50,
   },
   thinkingBox: {
     flexDirection: 'row',
