@@ -44,7 +44,33 @@ export default function DataStatisticsScreen() {
     days: 0,
     words: 0,
   });
-  const [heatmapData, setHeatmapData] = useState<number[][]>([]);
+  const [heatmapData, setHeatmapData] = useState<number[][]>(() => {
+    // Initialize with empty heatmap for current month
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const firstDayOfWeek = firstDay.getDay();
+    const totalDays = lastDay.getDate();
+
+    const heatmap: number[][] = [];
+    for (let row = 0; row < 5; row++) {
+      const weekRow: number[] = [];
+      for (let col = 0; col < 7; col++) {
+        const dayIndex = row * 7 + col;
+        const actualDay = dayIndex - firstDayOfWeek + 1;
+
+        if (actualDay < 1 || actualDay > totalDays) {
+          weekRow.push(-1); // Empty cell
+        } else {
+          weekRow.push(0); // Valid day with no data yet
+        }
+      }
+      heatmap.push(weekRow);
+    }
+    return heatmap;
+  });
   const [allTags, setAllTags] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showActionMenu, setShowActionMenu] = useState(false);
@@ -186,22 +212,16 @@ export default function DataStatisticsScreen() {
               {heatmapData.map((week, rowIndex) => (
                 <View key={rowIndex} style={styles.heatmapRow}>
                   {week.map((count, colIndex) => {
-                    // Determine color intensity based on note count
                     let cellColor = colors.border;
                     if (count === -1) {
-                      // Empty cell (outside current month)
-                      cellColor = 'transparent';
+                      cellColor = colors.border + '20';
                     } else if (count === 0) {
-                      // No notes
                       cellColor = colors.border;
                     } else if (count <= 2) {
-                      // 1-2 notes - light (30% opacity)
                       cellColor = colors.primary + '4D';
                     } else if (count <= 5) {
-                      // 3-5 notes - medium (60% opacity)
                       cellColor = colors.primary + '99';
                     } else {
-                      // 6+ notes - full color
                       cellColor = colors.primary;
                     }
 
