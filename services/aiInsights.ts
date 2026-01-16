@@ -31,8 +31,20 @@ export const generateInsight = async (
 
   const formattedNotes = formatNotesForAI(notes);
 
+  // 添加当前系统时间到系统提示词
+  const currentTime = new Date().toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  const enhancedSystemPrompt = `${systemPrompt}\n\n当前系统时间：${currentTime}`;
+
   console.log('=== AI洞察请求 ===');
-  console.log('系统提示词:', systemPrompt);
+  console.log('系统提示词:', enhancedSystemPrompt);
   console.log('格式化笔记内容:\n', formattedNotes);
   console.log('==================');
 
@@ -50,7 +62,7 @@ export const generateInsight = async (
       body: JSON.stringify({
         model: model.modelId,
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: enhancedSystemPrompt },
           { role: 'user', content: `请分析以下笔记内容：\n\n${formattedNotes}` }
         ],
         stream: true,

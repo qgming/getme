@@ -21,7 +21,19 @@ export const generateTags = async (content: string): Promise<string[]> => {
       return [];
     }
 
-    const prompt = `分析以下笔记内容，提取最重要的关键词作为标签。
+    const currentTime = new Date().toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      weekday: 'long'
+    });
+
+    const prompt = `当前系统时间：${currentTime}
+
+分析以下笔记内容，提取最重要的关键词作为标签。
 
 笔记内容：
 ${content}
