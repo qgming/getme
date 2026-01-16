@@ -99,6 +99,29 @@ export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
         );
       `);
 
+      await dbInstance.runAsync(`
+        CREATE TABLE IF NOT EXISTS chat_messages (
+          id TEXT PRIMARY KEY,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          timestamp INTEGER NOT NULL
+        );
+      `);
+
+      await dbInstance.runAsync(`
+        CREATE INDEX IF NOT EXISTS idx_chat_messages_timestamp
+        ON chat_messages(timestamp DESC);
+      `);
+
+      await dbInstance.runAsync(`
+        CREATE TABLE IF NOT EXISTS personalization (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          name TEXT,
+          about TEXT,
+          updatedAt TEXT NOT NULL
+        );
+      `);
+
       return dbInstance;
     } catch (error) {
       dbInstance = null;

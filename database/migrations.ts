@@ -3,7 +3,7 @@ import * as aiDb from './aiProviders';
 import * as defaultModels from './defaultModels';
 import Constants from 'expo-constants';
 
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 
 interface Migration {
   version: number;
@@ -88,6 +88,27 @@ const migrations: Migration[] = [
           }
         }
       }
+    },
+  },
+  {
+    version: 3,
+    migrate: async () => {
+      // 创建聊天消息表
+      const db = await initDatabase();
+
+      await db.runAsync(`
+        CREATE TABLE IF NOT EXISTS chat_messages (
+          id TEXT PRIMARY KEY,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          timestamp INTEGER NOT NULL
+        );
+      `);
+
+      await db.runAsync(`
+        CREATE INDEX IF NOT EXISTS idx_chat_messages_timestamp
+        ON chat_messages(timestamp DESC);
+      `);
     },
   },
 ];

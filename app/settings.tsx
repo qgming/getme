@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ChevronRight, Cpu, Palette, Sparkles } from 'lucide-react-native';
+import { ChevronRight, Cpu, Palette, Sparkles, User } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Image,
@@ -51,6 +51,19 @@ export default function SettingsScreen() {
             <Text style={styles.appVersion}>v1.0.0</Text>
           </View>
         </View>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: colors.surface }]}
+          onPress={() => router.push('/personalization')}
+        >
+          <View style={styles.cardLeft}>
+            <User size={22} color={colors.text} />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>个性化信息</Text>
+          </View>
+          <View style={styles.cardRight}>
+            <ChevronRight size={20} color={colors.textQuaternary} />
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.card, { backgroundColor: colors.surface }]}
