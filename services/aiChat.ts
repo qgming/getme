@@ -15,6 +15,8 @@ export interface ChatStreamCallbacks {
   onStream?: (chunk: string) => void;
   onComplete?: (fullContent: string) => void;
   onError?: (error: Error) => void;
+  onToolCall?: (toolName: string, args: any) => void;
+  onToolResult?: (toolName: string, result: any) => void;
 }
 
 /**
@@ -173,6 +175,20 @@ export const createDefaultSystemPrompt = async (): Promise<string> => {
 - 可以从我的记录中发现模式，提醒我自己可能忽略的事
 - 给建议时要符合我的性格和习惯，不要说教
 - 遇到不确定的事就直说不确定，不要装作什么都知道
+
+## 可用工具
+你可以使用以下工具来检索我的笔记，以便更好地回答问题：
+
+1. **get_notes_by_tags** - 根据标签检索笔记（如"工作"、"学习"等）
+2. **get_notes_by_time_range** - 检索特定时间范围内的笔记（如最近7天）
+3. **search_notes_content** - 搜索包含特定关键词的笔记
+
+**使用原则：**
+- 当用户问到"我之前记录过什么"、"我的笔记里有什么"时，主动使用工具
+- 当用户提到具体标签或时间时，使用相应工具检索
+- 检索到笔记后，基于笔记内容回答，而不是凭空猜测
+- 如果没有找到相关笔记，诚实告知
+- 不要过度使用工具，只在真正需要时调用
 
 当前时间：${currentTime}`;
 

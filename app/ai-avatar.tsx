@@ -17,7 +17,8 @@ import { ActionMenu, ActionItem } from '../components/ActionMenu';
 import { Toast } from '../components/Toast';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useTheme } from '../hooks/useTheme';
-import { ChatMessage, sendChatMessage, createDefaultSystemPrompt } from '../services/aiChat';
+import { ChatMessage, createDefaultSystemPrompt } from '../services/aiChat';
+import { sendChatMessageWithTools } from '../services/aiChatWithTools';
 import { useChatStore } from '../stores/chatStore';
 import * as Clipboard from 'expo-clipboard';
 
@@ -80,6 +81,9 @@ export default function AIAvatarScreen() {
 
   // ConfirmDialog 状态
   const [confirmVisible, setConfirmVisible] = useState(false);
+
+  // 工具调用状态
+  const [toolCallStatus, setToolCallStatus] = useState<string | null>(null);
 
   // 初始化：加载系统提示词
   useEffect(() => {
@@ -171,11 +175,11 @@ export default function AIAvatarScreen() {
     try {
       const assistantMessageId = `assistant-${Date.now()}`;
 
-      await sendChatMessage([systemMessage, ...messages, userMessage], {
-        onStream: (chunk) => {
+      await sendChatMessageWithTools([systemMessage, ...messages, userMessage], {
+        onStream: (chunk: string) => {
           setStreamingContent(chunk);
         },
-        onComplete: async (fullContent) => {
+        onComplete: async (fullContent: string) => {
           const assistantMessage: ChatMessage = {
             id: assistantMessageId,
             role: 'assistant',
@@ -184,18 +188,32 @@ export default function AIAvatarScreen() {
           };
           await addMessage(assistantMessage);
           clearStreamingContent();
+          setToolCallStatus(null);
           setLoading(false);
         },
-        onError: (error) => {
+        onToolCall: (toolName: string, args: any) => {
+          const friendlyNames: { [key: string]: string } = {
+            'get_notes_by_tags': '正在检索标签笔记',
+            'get_notes_by_time_range': '正在检索时间范围笔记',
+            'search_notes_content': '正在搜索笔记内容'
+          };
+          setToolCallStatus(friendlyNames[toolName] || '正在调用工具');
+        },
+        onToolResult: (toolName: string, result: any) => {
+          setToolCallStatus(null);
+        },
+        onError: (error: Error) => {
           console.error('AI对话错误:', error);
           setLoading(false);
           clearStreamingContent();
+          setToolCallStatus(null);
         },
       });
     } catch (error) {
       console.error('发送消息失败:', error);
       setLoading(false);
       clearStreamingContent();
+      setToolCallStatus(null);
     }
   };
 
@@ -255,8 +273,20 @@ export default function AIAvatarScreen() {
           </View>
         )}
 
+        {/* 工具调用指示器 */}
+        {toolCallStatus && (
+          <View style={[styles.messageBubble, styles.assistantBubble, { backgroundColor: colors.surface }]}>
+            <View style={styles.toolCallIndicator}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.toolCallText, { color: colors.textSecondary }]}>
+                {toolCallStatus}
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* 加载指示器 */}
-        {isLoading && !streamingContent && (
+        {isLoading && !streamingContent && !toolCallStatus && (
           <View style={[styles.messageBubble, styles.assistantBubble, { backgroundColor: colors.surface }]}>
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
@@ -356,5 +386,14 @@ const styles = StyleSheet.create({
   timestampText: {
     fontSize: 12,
     opacity: 0.6,
+  },
+  toolCallIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  toolCallText: {
+    fontSize: 14,
+    marginLeft: 8,
   },
 });

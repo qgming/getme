@@ -130,3 +130,110 @@ export const getStats = async (): Promise<{
     return { totalNotes: 0, monthlyNotes: 0, taggedNotes: 0 };
   }
 };
+
+export const getNotesByTags = async (
+  tags: string[],
+  matchMode: 'any' | 'all' = 'any',
+  limit: number = 10
+): Promise<Note[]> => {
+  try {
+    if (!tags || tags.length === 0) return [];
+
+    const db = await initDatabase();
+    const safeLimit = Math.min(Math.max(1, limit), 50);
+
+    if (matchMode === 'any') {
+      // OR logic: note has at least one of the tags
+      const conditions = tags.map(() => 'tags LIKE ?').join(' OR ');
+      const params = tags.map(tag => `%"${tag}"%`);
+
+      const result = await db.getAllAsync<Note & { tags: string | null }>(
+        `SELECT * FROM notes WHERE ${conditions} ORDER BY updatedAt DESC LIMIT ?`,
+        [...params, safeLimit]
+      );
+
+      return result.map(note => {
+        let parsedTags: string[] = [];
+        try {
+          parsedTags = note.tags ? JSON.parse(note.tags) : [];
+          if (!Array.isArray(parsedTags)) parsedTags = [];
+        } catch {
+          parsedTags = [];
+        }
+        return { ...note, tags: parsedTags };
+      });
+    } else {
+      // AND logic: note has all of the tags
+      // Fetch candidates and filter in JavaScript for accuracy
+      const conditions = tags.map(() => 'tags LIKE ?').join(' AND ');
+      const params = tags.map(tag => `%"${tag}"%`);
+
+      const result = await db.getAllAsync<Note & { tags: string | null }>(
+        `SELECT * FROM notes WHERE ${conditions} ORDER BY updatedAt DESC`,
+        params
+      );
+
+      // Filter to ensure all tags are present
+      const filtered = result.filter(note => {
+        let noteTags: string[] = [];
+        try {
+          noteTags = note.tags ? JSON.parse(note.tags) : [];
+          if (!Array.isArray(noteTags)) noteTags = [];
+        } catch {
+          noteTags = [];
+        }
+        return tags.every(tag => noteTags.includes(tag));
+      });
+
+      return filtered.slice(0, safeLimit).map(note => {
+        let parsedTags: string[] = [];
+        try {
+          parsedTags = note.tags ? JSON.parse(note.tags) : [];
+          if (!Array.isArray(parsedTags)) parsedTags = [];
+        } catch {
+          parsedTags = [];
+        }
+        return { ...note, tags: parsedTags };
+      });
+    }
+  } catch (error) {
+    console.error('getNotesByTags error:', error);
+    return [];
+  }
+};
+
+export const getNotesByTimeRange = async (
+  daysAgo: number,
+  dateField: 'createdAt' | 'updatedAt' = 'updatedAt',
+  limit: number = 10
+): Promise<Note[]> => {
+  try {
+    if (daysAgo < 0) return [];
+
+    const db = await initDatabase();
+    const safeLimit = Math.min(Math.max(1, limit), 50);
+
+    // Calculate cutoff date
+    const cutoffDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+    const cutoffISO = cutoffDate.toISOString();
+
+    const result = await db.getAllAsync<Note & { tags: string | null }>(
+      `SELECT * FROM notes WHERE ${dateField} >= ? ORDER BY ${dateField} DESC LIMIT ?`,
+      [cutoffISO, safeLimit]
+    );
+
+    return result.map(note => {
+      let parsedTags: string[] = [];
+      try {
+        parsedTags = note.tags ? JSON.parse(note.tags) : [];
+        if (!Array.isArray(parsedTags)) parsedTags = [];
+      } catch {
+        parsedTags = [];
+      }
+      return { ...note, tags: parsedTags };
+    });
+  } catch (error) {
+    console.error('getNotesByTimeRange error:', error);
+    return [];
+  }
+};
