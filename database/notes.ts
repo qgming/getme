@@ -237,3 +237,33 @@ export const getNotesByTimeRange = async (
     return [];
   }
 };
+
+export const getAllUniqueTags = async (): Promise<string[]> => {
+  try {
+    const db = await initDatabase();
+    const result = await db.getAllAsync<{ tags: string | null }>(
+      'SELECT tags FROM notes WHERE tags IS NOT NULL AND tags != "[]"'
+    );
+
+    const tagsSet = new Set<string>();
+    result.forEach(row => {
+      try {
+        const parsedTags = row.tags ? JSON.parse(row.tags) : [];
+        if (Array.isArray(parsedTags)) {
+          parsedTags.forEach(tag => {
+            if (tag && typeof tag === 'string') {
+              tagsSet.add(tag);
+            }
+          });
+        }
+      } catch {
+        // Skip invalid JSON
+      }
+    });
+
+    return Array.from(tagsSet).sort();
+  } catch (error) {
+    console.error('getAllUniqueTags error:', error);
+    return [];
+  }
+};
