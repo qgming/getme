@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { ChevronRight, Cpu, Palette, Sparkles } from 'lucide-react-native';
+import { ChevronRight, Cpu, Palette, Sparkles, User } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Image,
@@ -86,11 +86,24 @@ export default function SettingsScreen() {
 
         <TouchableOpacity
           style={[styles.card, { backgroundColor: colors.surface }]}
+          onPress={() => router.push('/personalization')}
+        >
+          <View style={styles.cardLeft}>
+            <User size={22} color={colors.text} />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>个性化信息</Text>
+          </View>
+          <View style={styles.cardRight}>
+            <ChevronRight size={20} color={colors.textQuaternary} />
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: colors.surface }]}
           onPress={() => router.push('/model-config')}
         >
           <View style={styles.cardLeft}>
             <Cpu size={22} color={colors.text} />
-            <Text style={[styles.cardTitle, { color: colors.text }]}>AI设置</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>模型配置</Text>
           </View>
           <View style={styles.cardRight}>
             <ChevronRight size={20} color={colors.textQuaternary} />

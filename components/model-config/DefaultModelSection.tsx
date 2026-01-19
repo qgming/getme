@@ -49,24 +49,15 @@ export function DefaultModelSection() {
 
   return (
     <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>默认模型</Text>
-        <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-          为不同功能选择默认模型
-        </Text>
-      </View>
-
-      <View style={styles.sectionContent}>
-        {FEATURES.map((feature) => (
-          <DefaultModelItem
-            key={feature.key}
-            feature={feature.key}
-            featureName={feature.label}
-            currentModel={getModelName(feature.key)}
-            onPress={() => handleFeaturePress(feature.key)}
-          />
-        ))}
-      </View>
+      {FEATURES.map((feature) => (
+        <DefaultModelItem
+          key={feature.key}
+          feature={feature.key}
+          featureName={feature.label}
+          currentModel={getModelName(feature.key)}
+          onPress={() => handleFeaturePress(feature.key)}
+        />
+      ))}
 
       {selectedFeature && (
         <ModelSelectionModal
@@ -86,21 +77,6 @@ export function DefaultModelSection() {
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  sectionDescription: {
-    fontSize: 14,
-  },
-  sectionContent: {
-    // Content styles
+    marginBottom: 24,
   },
 });

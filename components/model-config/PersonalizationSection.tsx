@@ -45,42 +45,18 @@ export function PersonalizationSection({ onChange }: PersonalizationSectionProps
 
   return (
     <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>个性化</Text>
-        <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-          帮助AI更好地了解你
-        </Text>
-      </View>
-
-      <View style={styles.sectionContent}>
-        <PersonalizationForm
-          initialName={name}
-          initialAbout={about}
-          onNameChange={handleNameChange}
-          onAboutChange={handleAboutChange}
-        />
-      </View>
+      <PersonalizationForm
+        initialName={name}
+        initialAbout={about}
+        onNameChange={handleNameChange}
+        onAboutChange={handleAboutChange}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 32,
-  },
-  sectionHeader: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  sectionDescription: {
-    fontSize: 14,
-  },
-  sectionContent: {
-    paddingHorizontal: 16,
+    marginBottom: 24,
   },
 });

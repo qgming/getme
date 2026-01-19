@@ -22,12 +22,12 @@ export function PersonalizationForm({
   const { colors } = useTheme();
 
   return (
-    <>
-      <View style={styles.section}>
+    <View style={styles.container}>
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <Text style={[styles.label, { color: colors.text }]}>姓名</Text>
         <TextInput
           style={[styles.input, {
-            backgroundColor: colors.surface,
+            backgroundColor: colors.background,
             color: colors.text,
           }]}
           value={initialName}
@@ -37,11 +37,11 @@ export function PersonalizationForm({
         />
       </View>
 
-      <View style={styles.section}>
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <Text style={[styles.label, { color: colors.text }]}>关于我</Text>
         <TextInput
           style={[styles.textArea, {
-            backgroundColor: colors.surface,
+            backgroundColor: colors.background,
             color: colors.text,
           }]}
           value={initialAbout}
@@ -53,29 +53,49 @@ export function PersonalizationForm({
           textAlignVertical="top"
         />
       </View>
-    </>
+
+      <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+          这些信息将帮助AI更好地了解你，提供更个性化的服务
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: 16,
+  container: {
+    paddingHorizontal: 16,
+  },
+  card: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   input: {
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 8,
+    padding: 12,
     fontSize: 16,
   },
   textArea: {
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 8,
+    padding: 12,
     fontSize: 16,
     lineHeight: 24,
     minHeight: 200,
+  },
+  infoCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  infoText: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
