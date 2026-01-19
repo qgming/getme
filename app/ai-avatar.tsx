@@ -4,9 +4,6 @@ import {
   StatusBar,
   StyleSheet,
   View,
-  Text,
-  ActivityIndicator,
-  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,46 +13,19 @@ import { ChatInput } from '../components/ChatInput';
 import { ActionMenu, ActionItem } from '../components/ActionMenu';
 import { Toast } from '../components/Toast';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import {
+  MessageBubble,
+  MessageTimestamp,
+  StreamingMessage,
+  ToolCallIndicator,
+  LoadingIndicator,
+  shouldShowTimestamp,
+} from '../components/ai-avatar';
 import { useTheme } from '../hooks/useTheme';
 import { ChatMessage, createDefaultSystemPrompt } from '../services/aiChat';
 import { sendChatMessageWithTools } from '../services/aiChatWithTools';
 import { useChatStore } from '../stores/chatStore';
 import * as Clipboard from 'expo-clipboard';
-
-// 格式化时间显示
-const formatMessageTime = (timestamp: number): string => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diff = now.getTime() - timestamp;
-  const oneDay = 24 * 60 * 60 * 1000;
-
-  // 今天
-  if (diff < oneDay && date.getDate() === now.getDate()) {
-    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  // 昨天
-  const yesterday = new Date(now.getTime() - oneDay);
-  if (date.getDate() === yesterday.getDate()) {
-    return `昨天 ${date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
-  }
-
-  // 其他日期
-  return date.toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-// 判断是否需要显示时间分隔（超过1小时）
-const shouldShowTimestamp = (currentMsg: ChatMessage, prevMsg?: ChatMessage): boolean => {
-  if (!prevMsg) return true;
-  const timeDiff = currentMsg.timestamp - prevMsg.timestamp;
-  const oneHour = 60 * 60 * 1000;
-  return timeDiff > oneHour;
-};
 
 export default function AIAvatarScreen() {
   const router = useRouter();
@@ -233,64 +203,17 @@ export default function AIAvatarScreen() {
 
           return (
             <React.Fragment key={message.id}>
-              {/* 时间分隔 */}
-              {showTime && (
-                <View style={styles.timestampContainer}>
-                  <Text style={[styles.timestampText, { color: colors.textTertiary }]}>
-                    {formatMessageTime(message.timestamp)}
-                  </Text>
-                </View>
-              )}
-
-              {/* 消息气泡 */}
-              <Pressable
-                onLongPress={(event) => handleLongPress(message, event)}
-                style={[
-                  styles.messageBubble,
-                  message.role === 'user' ? styles.userBubble : styles.assistantBubble,
-                  { backgroundColor: message.role === 'user' ? colors.primary : colors.surface },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.messageText,
-                    { color: message.role === 'user' ? '#fff' : colors.text },
-                  ]}
-                >
-                  {message.content}
-                </Text>
-              </Pressable>
+              {showTime && <MessageTimestamp timestamp={message.timestamp} />}
+              <MessageBubble message={message} onLongPress={handleLongPress} />
             </React.Fragment>
           );
         })}
 
-        {/* 流式输出中的消息 */}
-        {isLoading && streamingContent && (
-          <View style={[styles.messageBubble, styles.assistantBubble, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.messageText, { color: colors.text }]}>
-              {streamingContent}
-            </Text>
-          </View>
-        )}
+        {isLoading && streamingContent && <StreamingMessage content={streamingContent} />}
 
-        {/* 工具调用指示器 */}
-        {toolCallStatus && (
-          <View style={[styles.messageBubble, styles.assistantBubble, { backgroundColor: colors.surface }]}>
-            <View style={styles.toolCallIndicator}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={[styles.toolCallText, { color: colors.textSecondary }]}>
-                {toolCallStatus}
-              </Text>
-            </View>
-          </View>
-        )}
+        {toolCallStatus && <ToolCallIndicator status={toolCallStatus} />}
 
-        {/* 加载指示器 */}
-        {isLoading && !streamingContent && !toolCallStatus && (
-          <View style={[styles.messageBubble, styles.assistantBubble, { backgroundColor: colors.surface }]}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        )}
+        {isLoading && !streamingContent && !toolCallStatus && <LoadingIndicator />}
       </ScrollView>
 
       {/* 输入框组件 */}
@@ -360,40 +283,5 @@ const styles = StyleSheet.create({
     paddingTop: 100,
     paddingHorizontal: 16,
     paddingBottom: 120,
-  },
-  messageBubble: {
-    maxWidth: '80%',
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 12,
-  },
-  userBubble: {
-    alignSelf: 'flex-end',
-    borderBottomRightRadius: 4,
-  },
-  assistantBubble: {
-    alignSelf: 'flex-start',
-    borderBottomLeftRadius: 4,
-  },
-  messageText: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  timestampContainer: {
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  timestampText: {
-    fontSize: 12,
-    opacity: 0.6,
-  },
-  toolCallIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  toolCallText: {
-    fontSize: 14,
-    marginLeft: 8,
   },
 });

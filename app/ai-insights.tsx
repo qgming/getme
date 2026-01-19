@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Filter, History } from 'lucide-react-native';
+import { History } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Dimensions, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomHeader } from '../components/CustomHeader';
 import PromptInfoDrawer from '../components/PromptInfoDrawer';
 import RangeFilterDrawer, { RangeFilter } from '../components/RangeFilterDrawer';
+import { InsightStats, PromptGrid } from '../components/ai-insights';
 import { useTheme } from '../hooks/useTheme';
 import { useNoteStore } from '../stores';
 import { INSIGHT_PROMPTS, InsightPrompt } from '../types/Insight';
@@ -97,40 +98,18 @@ export default function AIInsightsScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-        {/* Stats */}
-        <View style={[styles.statsContainer, { backgroundColor: colors.surface }]}>
-          <View style={styles.statsContent}>
-            <View style={styles.statsInfo}>
-              <Text style={[styles.statsText, { color: colors.textSecondary }]}>
-                已选择 <Text style={[styles.statsHighlight, { color: colors.primary }]}>{filteredNotes.length}</Text> 条笔记
-              </Text>
-              <Text style={[styles.statsDetail, { color: colors.textMuted }]}>
-                共 {notes.length} 条 · {allTags.length} 个标签
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setShowDrawer(true)}
-              style={[styles.filterButton, { backgroundColor: colors.background }]}
-            >
-              <Filter size={20} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <InsightStats
+          selectedCount={filteredNotes.length}
+          totalCount={notes.length}
+          totalTags={allTags.length}
+          onFilterPress={() => setShowDrawer(true)}
+        />
 
-        {/* Prompts */}
-        <View style={styles.promptsContainer}>
-          {INSIGHT_PROMPTS.map(prompt => (
-            <TouchableOpacity
-              key={prompt.id}
-              style={[styles.promptCard, { backgroundColor: colors.surface, width: cardSize, height: cardSize }]}
-              onPress={() => handlePromptPress(prompt)}
-            >
-              <Text style={styles.promptIcon}>{prompt.icon}</Text>
-              <Text style={[styles.promptTitle, { color: colors.text }]}>{prompt.title}</Text>
-              <Text style={[styles.promptAuthor, { color: colors.textMuted }]}>by {prompt.author}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <PromptGrid
+          prompts={INSIGHT_PROMPTS}
+          onPromptPress={handlePromptPress}
+          cardSize={cardSize}
+        />
       </ScrollView>
 
       <SafeAreaView style={styles.headerContainer} pointerEvents="box-none">
@@ -177,76 +156,5 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 100,
-  },
-  statsContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    marginBottom: 24,
-  },
-  statsContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statsInfo: {
-    flex: 1,
-  },
-  statsText: {
-    fontSize: 15,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  statsHighlight: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  statsDetail: {
-    fontSize: 13,
-  },
-  filterButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  filterBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 5,
-  },
-  promptsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 32,
-  },
-  promptCard: {
-    padding: 16,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  promptIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  promptTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  promptAuthor: {
-    fontSize: 11,
-    textAlign: 'center',
   },
 });

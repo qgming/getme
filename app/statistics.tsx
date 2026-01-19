@@ -1,12 +1,10 @@
 import { useRouter } from 'expo-router';
-import { Hash, MoreHorizontal } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,18 +12,9 @@ import { ActionMenu } from '../components/ActionMenu';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CustomHeader } from '../components/CustomHeader';
 import { DialogInput } from '../components/DialogInput';
+import { StatsCard, ActivityHeatmap, TagListItem } from '../components/statistics';
 import { useTheme } from '../hooks/useTheme';
 import { useNoteStore } from '../stores';
-
-// Format word count for display
-const formatWordCount = (count: number): string => {
-  if (count >= 100000) {
-    return (count / 10000).toFixed(1) + 'W';
-  } else if (count >= 10000) {
-    return (count / 1000).toFixed(1) + 'K';
-  }
-  return count.toString();
-};
 
 export default function DataStatisticsScreen() {
   const router = useRouter();
@@ -175,104 +164,42 @@ export default function DataStatisticsScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.statsContainer}>
-          <View style={[styles.statsCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{stats.notes}</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>笔记</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{stats.days}</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>天</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{formatWordCount(stats.words)}</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>字</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{stats.tags}</Text>
-              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>标签</Text>
-            </View>
-          </View>
+          <StatsCard
+            notes={stats.notes}
+            days={stats.days}
+            words={stats.words}
+            tags={stats.tags}
+          />
         </View>
 
         {/* Heatmap Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>本月笔记</Text>
-          <View style={[styles.heatmapContainer, { backgroundColor: colors.surface }]}>
-            {/* Week day labels */}
-            <View style={styles.weekLabels}>
-              {['日', '一', '二', '三', '四', '五', '六'].map((day, index) => (
-                <Text key={index} style={[styles.weekLabel, { color: colors.textSecondary }]}>
-                  {day}
-                </Text>
-              ))}
-            </View>
-            {/* Heatmap grid */}
-            <View style={styles.heatmapGrid}>
-              {heatmapData.map((week, rowIndex) => (
-                <View key={rowIndex} style={styles.heatmapRow}>
-                  {week.map((count, colIndex) => {
-                    let cellColor = colors.border;
-                    if (count === -1) {
-                      cellColor = colors.border + '20';
-                    } else if (count === 0) {
-                      cellColor = colors.border;
-                    } else if (count <= 2) {
-                      cellColor = colors.primary + '4D';
-                    } else if (count <= 5) {
-                      cellColor = colors.primary + '99';
-                    } else {
-                      cellColor = colors.primary;
-                    }
-
-                    return (
-                      <View
-                        key={colIndex}
-                        style={[
-                          styles.heatmapCell,
-                          { backgroundColor: cellColor }
-                        ]}
-                      />
-                    );
-                  })}
-                </View>
-              ))}
-            </View>
-          </View>
+          <ActivityHeatmap heatmapData={heatmapData} />
         </View>
 
         {pinnedTags.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>置顶标签</Text>
             {pinnedTags.map((tag, index) => (
-              <TouchableOpacity
+              <TagListItem
                 key={`pinned-${index}`}
-                style={[styles.tagItem, { backgroundColor: colors.surface }]}
+                tag={tag}
                 onPress={() => {
                   router.push({
                     pathname: '/tag-notes',
                     params: { tag },
                   } as any);
                 }}
-              >
-                <View style={styles.tagLeft}>
-                  <Hash size={18} color={colors.text} />
-                  <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    e.currentTarget.measure((_x, _y, _width, height, pageX, pageY) => {
-                      setSelectedTag(tag);
-                      setMenuAnchor({ x: pageX, y: pageY + height });
-                      setShowActionMenu(true);
-                    });
-                  }}
-                  style={styles.moreButton}
-                >
-                  <MoreHorizontal size={18} color={colors.textQuaternary} />
-                </TouchableOpacity>
-              </TouchableOpacity>
+                onMorePress={(e) => {
+                  e.stopPropagation();
+                  e.currentTarget.measure((_x: number, _y: number, _width: number, height: number, pageX: number, pageY: number) => {
+                    setSelectedTag(tag);
+                    setMenuAnchor({ x: pageX, y: pageY + height });
+                    setShowActionMenu(true);
+                  });
+                }}
+              />
             ))}
           </View>
         )}
@@ -281,34 +208,24 @@ export default function DataStatisticsScreen() {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>全部标签</Text>
             {allTags.map((tag, index) => (
-              <TouchableOpacity
+              <TagListItem
                 key={index}
-                style={[styles.tagItem, { backgroundColor: colors.surface }]}
+                tag={tag}
                 onPress={() => {
                   router.push({
                     pathname: '/tag-notes',
                     params: { tag },
                   } as any);
                 }}
-              >
-                <View style={styles.tagLeft}>
-                  <Hash size={18} color={colors.text} />
-                  <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    e.currentTarget.measure((_x, _y, _width, height, pageX, pageY) => {
-                      setSelectedTag(tag);
-                      setMenuAnchor({ x: pageX, y: pageY + height });
-                      setShowActionMenu(true);
-                    });
-                  }}
-                  style={styles.moreButton}
-                >
-                  <MoreHorizontal size={18} color={colors.textQuaternary} />
-                </TouchableOpacity>
-              </TouchableOpacity>
+                onMorePress={(e) => {
+                  e.stopPropagation();
+                  e.currentTarget.measure((_x: number, _y: number, _width: number, height: number, pageX: number, pageY: number) => {
+                    setSelectedTag(tag);
+                    setMenuAnchor({ x: pageX, y: pageY + height });
+                    setShowActionMenu(true);
+                  });
+                }}
+              />
             ))}
           </View>
         )}
@@ -455,25 +372,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
   },
-  statsCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    fontSize: 13,
-    marginTop: 6,
-  },
   section: {
     marginTop: 20,
     paddingHorizontal: 16,
@@ -484,54 +382,5 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  tagItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  tagLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  tagText: {
-    fontSize: 16,
-    marginLeft: 12,
-  },
-  moreButton: {
-    padding: 4,
-  },
-  heatmapContainer: {
-    borderRadius: 12,
-    padding: 16,
-  },
-  weekLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 8,
-  },
-  weekLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    width: 36,
-    textAlign: 'center',
-  },
-  heatmapGrid: {
-    gap: 4,
-  },
-  heatmapRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 4,
-  },
-  heatmapCell: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
   },
 });
