@@ -1,4 +1,5 @@
 import { getNotesByTags, getNotesByTimeRange, searchNotes } from '../database/notes';
+import { searchMemories } from '../database/memories';
 import { Note } from '../types/Note';
 
 // Tool schema definitions for OpenAI function calling
@@ -71,6 +72,32 @@ export const AI_TOOLS = [
           limit: {
             type: "number",
             description: "返回的最大笔记数量，默认10条，最多50条。如果第一次搜索结果太少，可以换个关键词再试。"
+          }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_memories",
+      description: "检索用户的长期记忆信息。主动使用场景：当需要了解用户的背景、偏好、习惯、目标等长期信息时调用。这些记忆来自之前的对话历史，包含用户的个人信息、工作方式、学习计划等。当最近20条消息中没有足够上下文时，应该查询记忆。",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "搜索关键词，用于匹配相关记忆。可以是主题词（如'工作'、'学习'）、具体内容（如'React'、'项目'）等。"
+          },
+          category: {
+            type: "string",
+            enum: ["personal", "preference", "goal", "fact", "relationship", "all"],
+            description: "记忆分类过滤。'all'表示不限分类（默认）。personal=个人信息，preference=偏好习惯，goal=目标计划，fact=重要事实，relationship=人际关系。"
+          },
+          limit: {
+            type: "number",
+            description: "返回的最大记忆数量，默认5条，最多10条。"
           }
         },
         required: ["query"]
@@ -162,6 +189,32 @@ const executeSearchNotes = async (args: any): Promise<string> => {
 };
 
 /**
+ * Execute get_memories tool
+ */
+const executeGetMemories = async (args: any): Promise<string> => {
+  const { query, category = 'all', limit = 5 } = args;
+
+  if (!query || typeof query !== 'string') {
+    return JSON.stringify({
+      error: true,
+      message: '搜索关键词无效'
+    });
+  }
+
+  const memories = await searchMemories(query, category, Math.min(limit, 10));
+
+  return JSON.stringify({
+    total_count: memories.length,
+    memories: memories.map(m => ({
+      content: m.content,
+      category: m.category,
+      createdAt: m.createdAt
+    })),
+    message: memories.length === 0 ? '未找到相关记忆' : undefined
+  });
+};
+
+/**
  * Main tool execution dispatcher
  */
 export const executeToolCall = async (
@@ -178,6 +231,8 @@ export const executeToolCall = async (
         return await executeGetNotesByTimeRange(args);
       case 'search_notes_content':
         return await executeSearchNotes(args);
+      case 'get_memories':
+        return await executeGetMemories(args);
       default:
         throw new Error(`未知的工具: ${toolName}`);
     }

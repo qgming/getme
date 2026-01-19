@@ -137,9 +137,9 @@ export default function AIAvatarScreen() {
     }
   };
 
-  // 跳转到个性化记忆页面
+  // 跳转到记忆管理页面
   const handleMemoryPress = () => {
-    router.push('/personalization');
+    router.push('/memory-management');
   };
 
   // ActionMenu 操作项

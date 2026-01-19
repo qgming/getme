@@ -122,6 +122,30 @@ export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
         );
       `);
 
+      await dbInstance.runAsync(`
+        CREATE TABLE IF NOT EXISTS avatar_memories (
+          id TEXT PRIMARY KEY,
+          content TEXT NOT NULL,
+          category TEXT,
+          source_start_timestamp INTEGER NOT NULL,
+          source_end_timestamp INTEGER NOT NULL,
+          source_message_count INTEGER NOT NULL,
+          extraction_model TEXT NOT NULL,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL
+        );
+      `);
+
+      await dbInstance.runAsync(`
+        CREATE INDEX IF NOT EXISTS idx_avatar_memories_created
+        ON avatar_memories(createdAt DESC);
+      `);
+
+      await dbInstance.runAsync(`
+        CREATE INDEX IF NOT EXISTS idx_avatar_memories_category
+        ON avatar_memories(category);
+      `);
+
       return dbInstance;
     } catch (error) {
       dbInstance = null;

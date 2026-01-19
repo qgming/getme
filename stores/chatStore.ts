@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ChatMessage } from '../services/aiChat';
 import { getRecentChatMessages, saveChatMessage, deleteChatMessage } from '../database/chatMessages';
+import { extractMemoriesInBackground } from '../services/aiMemoryExtraction';
 
 interface ChatStore {
   messages: ChatMessage[];
@@ -39,6 +40,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   addMessage: async (message: ChatMessage) => {
     await saveChatMessage(message);
     set((state) => ({ messages: [...state.messages, message] }));
+
+    // Trigger memory extraction every 20 conversation messages
+    const conversationMessages = get().messages.filter(m => m.role !== 'system');
+    if (conversationMessages.length % 20 === 0 && conversationMessages.length > 0) {
+      console.log(`[记忆提取] 达到${conversationMessages.length}条对话，触发记忆提取`);
+      extractMemoriesInBackground(conversationMessages.slice(-20));
+    }
   },
 
   setLoading: (loading: boolean) => {

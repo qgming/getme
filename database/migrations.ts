@@ -3,7 +3,7 @@ import * as aiDb from './aiProviders';
 import * as defaultModels from './defaultModels';
 import Constants from 'expo-constants';
 
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4;
 
 interface Migration {
   version: number;
@@ -109,6 +109,51 @@ const migrations: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_chat_messages_timestamp
         ON chat_messages(timestamp DESC);
       `);
+    },
+  },
+  {
+    version: 4,
+    migrate: async () => {
+      // 创建记忆表并设置默认记忆提取模型
+      const db = await initDatabase();
+
+      // 创建记忆表
+      await db.runAsync(`
+        CREATE TABLE IF NOT EXISTS avatar_memories (
+          id TEXT PRIMARY KEY,
+          content TEXT NOT NULL,
+          category TEXT,
+          source_start_timestamp INTEGER NOT NULL,
+          source_end_timestamp INTEGER NOT NULL,
+          source_message_count INTEGER NOT NULL,
+          extraction_model TEXT NOT NULL,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL
+        );
+      `);
+
+      await db.runAsync(`
+        CREATE INDEX IF NOT EXISTS idx_avatar_memories_created
+        ON avatar_memories(createdAt DESC);
+      `);
+
+      await db.runAsync(`
+        CREATE INDEX IF NOT EXISTS idx_avatar_memories_category
+        ON avatar_memories(category);
+      `);
+
+      // 设置默认记忆提取模型（使用 Qwen3-8B）
+      const providers = await aiDb.getAllProviders();
+      const siliconflow = providers.find(p => p.name === 'SiliconFlow');
+
+      if (siliconflow) {
+        const existingModels = await aiDb.getModelsByProvider(siliconflow.id);
+        const qwen3Model = existingModels.find(m => m.modelId === 'Qwen/Qwen3-8B');
+
+        if (qwen3Model) {
+          await defaultModels.setDefaultModel('memory', qwen3Model.id, siliconflow.id);
+        }
+      }
     },
   },
 ];

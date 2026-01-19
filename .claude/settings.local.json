@@ -29,7 +29,8 @@
       "Bash(tasklist:*)",
       "Bash(./gradlew --stop:*)",
       "Bash(java -version:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

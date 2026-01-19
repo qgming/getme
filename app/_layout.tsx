@@ -67,6 +67,10 @@ export default function RootLayout() {
         <Stack.Screen name="tag-notes" options={{ headerShown: false }} />
         <Stack.Screen name="insight-result" options={{ headerShown: false }} />
         <Stack.Screen name="insight-history" options={{ headerShown: false }} />
+        <Stack.Screen name="memory-management" options={{ headerShown: false }} />
+        <Stack.Screen name="ai-provider" options={{ headerShown: false }} />
+        <Stack.Screen name="default-model" options={{ headerShown: false }} />
+        <Stack.Screen name="personalization" options={{ headerShown: false }} />
       </Stack>
     </GestureHandlerRootView>
   );

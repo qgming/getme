@@ -21,6 +21,7 @@ const FEATURES: { key: AIFeature; label: string }[] = [
   { key: 'insights', label: 'AI洞察' },
   { key: 'avatar', label: 'AI分身' },
   { key: 'tag', label: 'AI标签' },
+  { key: 'memory', label: 'AI记忆提取' },
 ];
 
 export default function DefaultModelScreen() {

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as defaultModelsDb from '../database/defaultModels';
 
-export type AIFeature = 'transcription' | 'insights' | 'avatar' | 'tag';
+export type AIFeature = 'transcription' | 'insights' | 'avatar' | 'tag' | 'memory';
 
 interface DefaultModelStore {
   defaultModels: Record<AIFeature, { modelId: string; providerId: string } | null>;
@@ -15,6 +15,7 @@ export const useDefaultModelStore = create<DefaultModelStore>((set, get) => ({
     insights: null,
     avatar: null,
     tag: null,
+    memory: null,
   },
 
   setDefaultModel: async (feature, modelId, providerId) => {
@@ -29,6 +30,7 @@ export const useDefaultModelStore = create<DefaultModelStore>((set, get) => ({
       insights: null,
       avatar: null,
       tag: null,
+      memory: null,
     };
 
     models.forEach(model => {
