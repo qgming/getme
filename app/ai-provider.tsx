@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { Box, MoreHorizontal, Plus, TestTube2 } from 'lucide-react-native';
+import { ArrowLeft, Box, Edit, MoreHorizontal, Plus, TestTube2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,18 +14,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
 import { AddModelModal } from '../components/model-selection';
+import { ProviderConfigDrawer } from '../components/model-services';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { CustomHeader } from '../components/CustomHeader';
 import { Toast } from '../components/Toast';
 import { useTheme } from '../hooks/useTheme';
 import * as aiDb from '../database/aiProviders';
 import { useAIStore } from '../stores/aiStore';
+import { useRouter } from 'expo-router';
 
 export default function AIProviderScreen() {
   const { colors } = useTheme();
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { providers, loadProviders } = useAIStore();
+  const { providers, loadProviders, updateProvider } = useAIStore();
   const [modalVisible, setModalVisible] = useState(false);
+  const [providerConfigVisible, setProviderConfigVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedModel, setSelectedModel] = useState<{ id: string; modelId: string; name: string } | null>(null);
@@ -122,73 +125,83 @@ export default function AIProviderScreen() {
     }
   };
 
+  const handleEditProvider = () => {
+    setProviderConfigVisible(true);
+  };
+
+  const handleSaveProvider = async (config: { name: string; apiKey: string; baseUrl: string; iconName?: string }) => {
+    await updateProvider(provider.id, config, provider.models);
+    await loadProviders();
+    setProviderConfigVisible(false);
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
         <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-        <CustomHeader
-          title={provider.name}
-          showBackButton
-          rightElement={
-            <TouchableOpacity onPress={() => setModalVisible(true)}>
-              <Plus size={28} color={colors.accent} />
-            </TouchableOpacity>
-          }
-        />
-
-        <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Base URL</Text>
-            <Text style={[styles.infoValue, { color: colors.text }]} numberOfLines={2}>
-              {provider.baseUrl}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>API Key</Text>
-            <Text style={[styles.infoValue, { color: colors.text }]}>
-              {provider.apiKey ? '••••••••' + provider.apiKey.slice(-4) : '未设置'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.testButton, { backgroundColor: colors.accent }]}
-            onPress={() => setTestModalVisible(true)}
-          >
-            <TestTube2 size={16} color="#fff" />
-            <Text style={styles.testButtonText}>测试</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>模型列表</Text>
-
-        <FlatList
-          data={models}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={[styles.modelCard, { backgroundColor: colors.surface }]}>
-              <View style={styles.modelHeader}>
-                <Box size={20} color={colors.accent} />
-                <Text style={[styles.modelName, { color: colors.text }]}>{item.name}</Text>
-                <TouchableOpacity
-                  onPress={(event) => handleMorePress(event, item)}
-                  style={styles.moreButton}
-                >
-                  <MoreHorizontal size={20} color={colors.text} />
-                </TouchableOpacity>
+        <View style={styles.container}>
+          <FlatList
+            data={models}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={[styles.modelCard, { backgroundColor: colors.surface }]}>
+                <View style={styles.modelHeader}>
+                  <Box size={20} color={colors.accent} />
+                  <Text style={[styles.modelName, { color: colors.text }]}>{item.name}</Text>
+                  <TouchableOpacity
+                    onPress={(event) => handleMorePress(event, item)}
+                    style={styles.moreButton}
+                  >
+                    <MoreHorizontal size={20} color={colors.text} />
+                  </TouchableOpacity>
+                </View>
               </View>
+            )}
+            ListHeaderComponent={
+              <View style={{ height: 80 }} />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Box size={48} color={colors.textSecondary} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                  暂无模型
+                </Text>
+              </View>
+            }
+            contentContainerStyle={styles.listContent}
+          />
+
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={[styles.headerButton, styles.leftButton, { backgroundColor: colors.surface }]}
+              onPress={() => router.back()}
+            >
+              <ArrowLeft size={24} color={colors.text} />
+            </TouchableOpacity>
+            <View style={styles.headerRight}>
+              <TouchableOpacity
+                style={[styles.headerButton, { backgroundColor: colors.surface }]}
+                onPress={() => setTestModalVisible(true)}
+              >
+                <TestTube2 size={24} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.headerButton, { backgroundColor: colors.surface }]}
+                onPress={handleEditProvider}
+              >
+                <Edit size={24} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.headerButton, { backgroundColor: colors.surface }]}
+                onPress={() => setModalVisible(true)}
+              >
+                <Plus size={24} color={colors.accent} />
+              </TouchableOpacity>
             </View>
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Box size={48} color={colors.textSecondary} />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                暂无模型
-              </Text>
-            </View>
-          }
-          contentContainerStyle={styles.listContent}
-        />
+          </View>
+        </View>
 
         <ActionMenu
           visible={menuVisible}
@@ -228,6 +241,13 @@ export default function AIProviderScreen() {
           onConfirm={handleConfirmDelete}
           onCancel={() => setConfirmDelete(false)}
           isDestructive
+        />
+
+        <ProviderConfigDrawer
+          visible={providerConfigVisible}
+          onClose={() => setProviderConfigVisible(false)}
+          onConfirm={handleSaveProvider}
+          editProvider={provider}
         />
 
         <Modal
@@ -277,32 +297,47 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  infoCard: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    width: 80,
-  },
-  infoValue: {
-    fontSize: 14,
+  container: {
     flex: 1,
-    textAlign: 'right',
+  },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 56,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  leftButton: {
+    position: 'absolute',
+    left: 20,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerRight: {
+    position: 'absolute',
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginHorizontal: 16,
-    marginTop: 24,
+    marginTop: 12,
     marginBottom: 12,
   },
   listContent: {
@@ -334,21 +369,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     marginTop: 12,
-  },
-  testButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginTop: 12,
-    gap: 6,
-  },
-  testButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,

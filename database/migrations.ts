@@ -3,7 +3,7 @@ import * as aiDb from './aiProviders';
 import * as defaultModels from './defaultModels';
 import Constants from 'expo-constants';
 
-const CURRENT_VERSION = 4;
+const CURRENT_VERSION = 5;
 
 interface Migration {
   version: number;
@@ -18,18 +18,36 @@ const migrations: Migration[] = [
       const providers = await aiDb.getAllProviders();
 
       if (providers.length === 0) {
-        const xiaomiMimo = await aiDb.createProvider({
-          name: 'XiaomiMimo',
-          apiKey: Constants.expoConfig?.extra?.XIAOMIMIMO_API_KEY || '',
-          baseUrl: 'https://api.xiaomimimo.com/v1',
+        const gemini = await aiDb.createProvider({
+          name: 'Gemini',
+          apiKey: Constants.expoConfig?.extra?.GEMINI_API_KEY || '',
+          baseUrl: 'http://149.104.31.184:7860/v1',
           isEnabled: true,
-          iconName: 'XiaomiMimo',
+          iconName: 'Gemini',
         });
 
-        const mimoFlash = await aiDb.createModel({
-          modelId: 'mimo-v2-flash',
-          providerId: xiaomiMimo.id,
-          name: 'MiMo V2 Flash',
+        const geminiFlash = await aiDb.createModel({
+          modelId: 'gemini-2.5-flash',
+          providerId: gemini.id,
+          name: 'Gemini 2.5 Flash',
+        });
+
+        await aiDb.createModel({
+          modelId: 'gemini-2.5-pro',
+          providerId: gemini.id,
+          name: 'Gemini 2.5 Pro',
+        });
+
+        await aiDb.createModel({
+          modelId: 'gemini-3-flash-preview',
+          providerId: gemini.id,
+          name: 'Gemini 3 Flash Preview',
+        });
+
+        await aiDb.createModel({
+          modelId: 'gemini-3-pro-preview',
+          providerId: gemini.id,
+          name: 'Gemini 3 Pro Preview',
         });
 
         const siliconflow = await aiDb.createProvider({
@@ -53,9 +71,9 @@ const migrations: Migration[] = [
         });
 
         await defaultModels.setDefaultModel('transcription', senseVoice.id, siliconflow.id);
-        await defaultModels.setDefaultModel('insights', mimoFlash.id, xiaomiMimo.id);
-        await defaultModels.setDefaultModel('avatar', mimoFlash.id, xiaomiMimo.id);
-        await defaultModels.setDefaultModel('tag', mimoFlash.id, xiaomiMimo.id);
+        await defaultModels.setDefaultModel('insights', geminiFlash.id, gemini.id);
+        await defaultModels.setDefaultModel('avatar', geminiFlash.id, gemini.id);
+        await defaultModels.setDefaultModel('tag', geminiFlash.id, gemini.id);
       }
     },
   },
@@ -153,6 +171,59 @@ const migrations: Migration[] = [
         if (qwen3Model) {
           await defaultModels.setDefaultModel('memory', qwen3Model.id, siliconflow.id);
         }
+      }
+    },
+  },
+  {
+    version: 5,
+    migrate: async () => {
+      // 将 XiaomiMimo 提供商更改为 Gemini
+      const providers = await aiDb.getAllProviders();
+      const xiaomiMimo = providers.find(p => p.name === 'XiaomiMimo');
+
+      if (xiaomiMimo) {
+        // 更新提供商信息
+        await aiDb.updateProvider(xiaomiMimo.id, {
+          name: 'Gemini',
+          apiKey: Constants.expoConfig?.extra?.GEMINI_API_KEY || '',
+          baseUrl: 'http://149.104.31.184:7860/v1',
+          iconName: 'Gemini',
+        });
+
+        // 删除旧的 XiaomiMimo 模型
+        const oldModels = await aiDb.getModelsByProvider(xiaomiMimo.id);
+        for (const model of oldModels) {
+          await aiDb.deleteModel(model.id);
+        }
+
+        // 创建新的 Gemini 模型
+        const geminiFlash = await aiDb.createModel({
+          modelId: 'gemini-2.5-flash',
+          providerId: xiaomiMimo.id,
+          name: 'Gemini 2.5 Flash',
+        });
+
+        await aiDb.createModel({
+          modelId: 'gemini-2.5-pro',
+          providerId: xiaomiMimo.id,
+          name: 'Gemini 2.5 Pro',
+        });
+
+        await aiDb.createModel({
+          modelId: 'gemini-3-flash-preview',
+          providerId: xiaomiMimo.id,
+          name: 'Gemini 3 Flash Preview',
+        });
+
+        await aiDb.createModel({
+          modelId: 'gemini-3-pro-preview',
+          providerId: xiaomiMimo.id,
+          name: 'Gemini 3 Pro Preview',
+        });
+
+        // 更新默认模型为 Gemini 2.5 Flash
+        await defaultModels.setDefaultModel('insights', geminiFlash.id, xiaomiMimo.id);
+        await defaultModels.setDefaultModel('avatar', geminiFlash.id, xiaomiMimo.id);
       }
     },
   },

@@ -90,21 +90,6 @@ export function ProviderCard({ provider, onToggle, onEdit, onDelete }: ProviderC
             <MoreHorizontal size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
-
-        <View style={styles.infoContainer}>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Base URL</Text>
-            <Text style={[styles.infoValue, { color: colors.text }]} numberOfLines={1}>
-              {provider.baseUrl}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>API Key</Text>
-            <Text style={[styles.infoValue, { color: colors.text }]} numberOfLines={1}>
-              {provider.apiKey ? '••••••••' + provider.apiKey.slice(-4) : '未设置'}
-            </Text>
-          </View>
-        </View>
       </TouchableOpacity>
 
       <ActionMenu
@@ -128,7 +113,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -153,24 +137,5 @@ const styles = StyleSheet.create({
   },
   moreButton: {
     padding: 4,
-  },
-  infoContainer: {
-    marginBottom: 0,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    width: 80,
-  },
-  infoValue: {
-    fontSize: 14,
-    flex: 1,
-    textAlign: 'right',
   },
 });

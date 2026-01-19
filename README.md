@@ -189,7 +189,6 @@ npm install
 创建 `.env` 文件并添加 API 密钥：
 
 ```env
-XIAOMI_MIMO_API_KEY=your_xiaomi_api_key
 SILICONFLOW_API_KEY=your_siliconflow_api_key
 ```
 

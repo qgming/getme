@@ -55,8 +55,8 @@ module.exports = {
       eas: {
         projectId: "e378138d-a0f1-4310-9b44-e4dc3a00c4f5",
       },
-      XIAOMIMIMO_API_KEY: process.env.XIAOMIMIMO_API_KEY,
       SILICONFLOW_API_KEY: process.env.SILICONFLOW_API_KEY,
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     },
     owner: "qgming",
     icon: "./assets/images/icon.png",
