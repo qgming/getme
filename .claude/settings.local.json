@@ -30,7 +30,8 @@
       "Bash(./gradlew --stop:*)",
       "Bash(java -version:*)",
       "Bash(echo:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(wc:*)"
     ]
   }
 }

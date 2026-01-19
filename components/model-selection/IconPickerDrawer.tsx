@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import * as LobeIcons from '@lobehub/icons-rn';
 import { X, Search } from 'lucide-react-native';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface IconPickerDrawerProps {
   visible: boolean;
@@ -56,6 +56,10 @@ const AI_ICONS = [
   'YouMind', 'Yuanbao', 'ZAI', 'Zapier', 'Zeabur', 'ZenMux', 'ZeroOne', 'Zhipu',
 ];
 
+/**
+ * Icon picker drawer component
+ * 作用：用于选择AI提供商图标的抽屉组件
+ */
 export function IconPickerDrawer({ visible, onClose, onSelect, selectedIcon }: IconPickerDrawerProps) {
   const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');

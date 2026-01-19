@@ -59,7 +59,8 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="ai-avatar" options={{ headerShown: false }} />
         <Stack.Screen name="ai-insights" options={{ headerShown: false }} />
-        <Stack.Screen name="ai-settings" options={{ headerShown: false }} />
+        <Stack.Screen name="model-services" options={{ headerShown: false }} />
+        <Stack.Screen name="model-config" options={{ headerShown: false }} />
         <Stack.Screen name="statistics" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="note-editor" options={{ headerShown: false }} />
@@ -69,8 +70,6 @@ export default function RootLayout() {
         <Stack.Screen name="insight-history" options={{ headerShown: false }} />
         <Stack.Screen name="memory-management" options={{ headerShown: false }} />
         <Stack.Screen name="ai-provider" options={{ headerShown: false }} />
-        <Stack.Screen name="default-model" options={{ headerShown: false }} />
-        <Stack.Screen name="personalization" options={{ headerShown: false }} />
       </Stack>
     </GestureHandlerRootView>
   );

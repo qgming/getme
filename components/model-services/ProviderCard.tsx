@@ -3,25 +3,28 @@ import * as LobeIcons from '@lobehub/icons-rn';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../hooks/useTheme';
-import { AIProvider } from '../stores/aiStore';
-import { ActionItem, ActionMenu } from './ActionMenu';
+import { useTheme } from '../../hooks/useTheme';
+import { AIProvider } from '../../stores/aiStore';
+import { ActionItem, ActionMenu } from '../ActionMenu';
 
-interface AIProviderCardProps {
+interface ProviderCardProps {
   provider: AIProvider;
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export function AIProviderCard({ provider, onToggle, onEdit, onDelete }: AIProviderCardProps) {
+/**
+ * Provider card component
+ * 作用：显示AI提供商信息的卡片组件
+ */
+export function ProviderCard({ provider, onToggle, onEdit, onDelete }: ProviderCardProps) {
   const { colors } = useTheme();
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const isBuiltIn = provider.id === 'default-openai';
 
-  // 动态获取图标组件
   const IconComponent = provider.iconName ? (LobeIcons as any)[provider.iconName] : null;
 
   const handleMorePress = (event: GestureResponderEvent) => {

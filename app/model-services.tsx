@@ -2,22 +2,21 @@ import { Plus } from 'lucide-react-native';
 import { Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ScrollView,
   StatusBar,
   StyleSheet,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomHeader } from '../components/CustomHeader';
-import { AIConfigDrawer } from '../components/AIConfigDrawer';
-import { AIProviderCard } from '../components/AIProviderCard';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ProviderList, ProviderConfigDrawer } from '../components/model-services';
 import { useTheme } from '../hooks/useTheme';
-import { useAIStore } from '../stores/aiStore';
+import { useAIStore, AIProvider } from '../stores/aiStore';
 
-export default function AISettingsScreen() {
+export default function ModelServicesScreen() {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingProvider, setEditingProvider] = useState<any>(null);
+  const [editingProvider, setEditingProvider] = useState<AIProvider | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const { providers, addProvider, updateProvider, deleteProvider, toggleProvider, loadProviders } = useAIStore();
 
@@ -35,7 +34,7 @@ export default function AISettingsScreen() {
     setEditingProvider(null);
   };
 
-  const handleEditProvider = (provider: any) => {
+  const handleEditProvider = (provider: AIProvider) => {
     setEditingProvider(provider);
     setModalVisible(true);
   };
@@ -56,6 +55,10 @@ export default function AISettingsScreen() {
     setEditingProvider(null);
   };
 
+  const handleAddProvider = () => {
+    setModalVisible(true);
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -63,29 +66,27 @@ export default function AISettingsScreen() {
         <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
         <CustomHeader
-          title="AI设置"
+          title="模型服务"
           showBackButton
           rightElement={<Plus size={24} color={colors.text} />}
-          onRightPress={() => setModalVisible(true)}
+          onRightPress={handleAddProvider}
         />
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {providers.map((provider) => (
-            <AIProviderCard
-              key={provider.id}
-              provider={provider}
-              onToggle={() => toggleProvider(provider.id, !provider.isEnabled)}
-              onEdit={() => handleEditProvider(provider)}
-              onDelete={() => handleDeleteProvider(provider.id)}
-            />
-          ))}
-        </ScrollView>
+        <View style={styles.content}>
+          <ProviderList
+            providers={providers}
+            onToggle={toggleProvider}
+            onEdit={handleEditProvider}
+            onDelete={handleDeleteProvider}
+            onAdd={handleAddProvider}
+          />
+        </View>
 
-        <AIConfigDrawer
+        <ProviderConfigDrawer
           visible={modalVisible}
           onClose={handleCloseModal}
           onConfirm={handleSaveProvider}
-          editProvider={editingProvider}
+          editProvider={editingProvider || undefined}
         />
 
         <ConfirmDialog
@@ -109,6 +110,5 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingTop: 12,
   },
 });

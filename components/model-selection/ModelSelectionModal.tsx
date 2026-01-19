@@ -8,8 +8,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { X } from 'lucide-react-native';
-import { useTheme } from '../hooks/useTheme';
-import { AIProvider } from '../stores/aiStore';
+import { useTheme } from '../../hooks/useTheme';
+import { AIProvider } from '../../stores/aiStore';
 
 interface ModelSelectionModalProps {
   visible: boolean;
@@ -19,6 +19,10 @@ interface ModelSelectionModalProps {
   title: string;
 }
 
+/**
+ * Model selection modal component
+ * 作用：用于选择AI模型的模态框组件
+ */
 export const ModelSelectionModal: React.FC<ModelSelectionModalProps> = ({
   visible,
   onClose,

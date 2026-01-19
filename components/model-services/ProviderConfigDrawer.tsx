@@ -12,18 +12,22 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as LobeIcons from '@lobehub/icons-rn';
-import { useTheme } from '../hooks/useTheme';
-import { AIProvider } from '../stores/aiStore';
-import { IconPickerDrawer } from './IconPickerDrawer';
+import { useTheme } from '../../hooks/useTheme';
+import { AIProvider } from '../../stores/aiStore';
+import { IconPickerDrawer } from '../model-selection/IconPickerDrawer';
 
-interface AIConfigDrawerProps {
+interface ProviderConfigDrawerProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: (config: { name: string; apiKey: string; baseUrl: string; iconName?: string }) => void;
   editProvider?: AIProvider;
 }
 
-export function AIConfigDrawer({ visible, onClose, onConfirm, editProvider }: AIConfigDrawerProps) {
+/**
+ * Provider configuration drawer component
+ * 作用：用于添加或编辑AI提供商配置的抽屉组件
+ */
+export function ProviderConfigDrawer({ visible, onClose, onConfirm, editProvider }: ProviderConfigDrawerProps) {
   const { colors } = useTheme();
   const [name, setName] = useState('');
   const [apiKey, setApiKey] = useState('');

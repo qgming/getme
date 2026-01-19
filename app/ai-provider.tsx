@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionMenu } from '../components/ActionMenu';
-import { AddModelModal } from '../components/AddModelModal';
+import { AddModelModal } from '../components/model-selection';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CustomHeader } from '../components/CustomHeader';
 import { Toast } from '../components/Toast';

@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface AddModelModalProps {
   visible: boolean;
@@ -18,6 +18,10 @@ interface AddModelModalProps {
   initialData?: { modelId: string; name: string };
 }
 
+/**
+ * Add/Edit model modal component
+ * 作用：用于添加或编辑模型的模态框组件
+ */
 export function AddModelModal({ visible, onClose, onConfirm, initialData }: AddModelModalProps) {
   const { colors } = useTheme();
   const [modelId, setModelId] = useState('');
