@@ -52,17 +52,57 @@ export default function AIAvatarScreen() {
 
   // 工具调用状态
   const [toolCallStatus, setToolCallStatus] = useState<string | null>(null);
+  const statusQueueRef = useRef<{ message: string; minDuration: number }[]>([]);
+  const isProcessingQueueRef = useRef(false);
 
-  // 将消息按空行分割成多条消息
-  const splitMessageByBlankLines = (content: string): string[] => {
-    // 按连续的空行（两个或多个换行符）分割
-    const parts = content.split(/\n\s*\n+/);
-    // 过滤掉空字符串
-    return parts.filter(part => part.trim().length > 0);
+  // 处理状态队列
+  const processStatusQueue = async () => {
+    if (isProcessingQueueRef.current || statusQueueRef.current.length === 0) {
+      return;
+    }
+
+    isProcessingQueueRef.current = true;
+
+    while (statusQueueRef.current.length > 0) {
+      const item = statusQueueRef.current.shift();
+      if (!item) break;
+
+      setToolCallStatus(item.message);
+
+      // 如果这是最后一个项目，持续显示直到被新状态替换或清空
+      if (statusQueueRef.current.length === 0) {
+        // 不设置超时，让状态持续显示
+        isProcessingQueueRef.current = false;
+        return;
+      }
+
+      // 否则按照设定的时间显示
+      await new Promise(resolve => setTimeout(resolve, item.minDuration));
+    }
+
+    isProcessingQueueRef.current = false;
   };
 
-  // 延迟函数
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  // 添加状态到队列
+  const addStatusToQueue = (message: string, minDuration: number = 1000) => {
+    // 如果队列正在处理且已经空了（最后一个状态正在持续显示）
+    // 直接添加新状态并重新启动队列处理
+    if (isProcessingQueueRef.current && statusQueueRef.current.length === 0) {
+      statusQueueRef.current.push({ message, minDuration });
+      isProcessingQueueRef.current = false;
+      processStatusQueue();
+    } else {
+      statusQueueRef.current.push({ message, minDuration });
+      processStatusQueue();
+    }
+  };
+
+  // 清空队列
+  const clearStatusQueue = () => {
+    statusQueueRef.current = [];
+    isProcessingQueueRef.current = false;
+    setToolCallStatus(null);
+  };
 
   // 初始化：加载系统提示词
   useEffect(() => {
@@ -153,67 +193,57 @@ export default function AIAvatarScreen() {
     try {
       await sendChatMessage([systemMessage, ...messages, userMessage], {
         onComplete: async (fullContent: string) => {
-          // 将消息按空行分割
-          const messageParts = splitMessageByBlankLines(fullContent);
+          // 清空队列并添加完整消息
+          clearStatusQueue();
 
-          // 如果只有一条消息，直接发送
-          if (messageParts.length === 1) {
-            const assistantMessage: ChatMessage = {
-              id: `assistant-${Date.now()}`,
-              role: 'assistant',
-              content: fullContent,
-              timestamp: Date.now(),
-            };
-            await addMessage(assistantMessage);
-          } else {
-            // 多条消息，逐条发送，每条之间有延迟
-            for (let i = 0; i < messageParts.length; i++) {
-              if (i > 0) {
-                // 每条消息之间延迟 800-1500ms，模拟真实打字
-                await delay(800 + Math.random() * 700);
-              }
+          const assistantMessage: ChatMessage = {
+            id: `assistant-${Date.now()}`,
+            role: 'assistant',
+            content: fullContent,
+            timestamp: Date.now(),
+          };
+          await addMessage(assistantMessage);
 
-              const assistantMessage: ChatMessage = {
-                id: `assistant-${Date.now()}-${i}`,
-                role: 'assistant',
-                content: messageParts[i].trim(),
-                timestamp: Date.now(),
-              };
-              await addMessage(assistantMessage);
-            }
-          }
-
-          setToolCallStatus(null);
           setLoading(false);
         },
         onThinking: (message: string) => {
-          // 只在没有工具调用状态时显示思考中
-          if (!toolCallStatus && message) {
-            setToolCallStatus(message);
-          } else if (!message) {
-            // 清空思考状态，但保留工具调用状态
-            if (toolCallStatus === '正在思考中...') {
-              setToolCallStatus(null);
-            }
+          // 思考状态添加到队列，显示时间较短
+          if (message) {
+            addStatusToQueue(message, 300); // 思考状态显示0.3秒
           }
         },
         onToolCall: (toolName: string, args: any) => {
           const friendlyNames: { [key: string]: string } = {
-            'get_notes_by_tags': '正在查找相关笔记',
-            'get_notes_by_time_range': '正在查找最近的笔记',
-            'search_notes_content': '正在搜索笔记内容',
-            'get_memories': '正在检索记忆'
+            'get_notes_by_tags': '查找标签笔记',
+            'get_notes_by_time_range': '查找时间范围笔记',
+            'search_notes_content': '搜索笔记内容',
+            'get_memories': '检索长期记忆'
           };
-          setToolCallStatus(friendlyNames[toolName] || '正在处理');
+          const friendlyName = friendlyNames[toolName] || '处理中';
+
+          // 根据参数生成更详细的提示
+          let detailMessage = friendlyName;
+          if (toolName === 'get_notes_by_tags' && args.tags) {
+            detailMessage = `查找「${args.tags.join('、')}」标签`;
+          } else if (toolName === 'get_notes_by_time_range' && args.days_ago) {
+            detailMessage = `查找最近 ${args.days_ago} 天的笔记`;
+          } else if (toolName === 'search_notes_content' && args.query) {
+            detailMessage = `搜索「${args.query}」`;
+          } else if (toolName === 'get_memories' && args.query) {
+            detailMessage = `检索记忆：${args.query}`;
+          }
+
+          // 工具调用添加到队列，显示1.5秒
+          addStatusToQueue(detailMessage, 1500);
         },
         onToolResult: (toolName: string, result: any) => {
-          // 工具执行完成后，显示整理回答的状态
-          setToolCallStatus('正在整理回答');
+          // 工具执行完成，不做任何操作
+          // 状态会在队列中自动处理
         },
         onError: (error: Error) => {
           console.error('AI对话错误:', error);
+          clearStatusQueue();
           setLoading(false);
-          setToolCallStatus(null);
 
           // 显示错误提示
           const errorMessage: ChatMessage = {
@@ -227,8 +257,8 @@ export default function AIAvatarScreen() {
       });
     } catch (error) {
       console.error('发送消息失败:', error);
+      clearStatusQueue();
       setLoading(false);
-      setToolCallStatus(null);
 
       // 显示错误提示
       const errorMessage: ChatMessage = {

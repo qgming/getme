@@ -46,3 +46,11 @@ export const deleteChatMessage = async (messageId: string): Promise<void> => {
     [messageId]
   );
 };
+
+/**
+ * 清空所有聊天记录
+ */
+export const clearAllChatMessages = async (): Promise<void> => {
+  const db = await initDatabase();
+  await db.runAsync('DELETE FROM chat_messages');
+};

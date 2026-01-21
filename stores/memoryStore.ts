@@ -7,6 +7,7 @@ import {
   searchMemories as dbSearchMemories,
   getMemoryCount,
   getLastExtractionTime,
+  clearAllMemories,
 } from '../database/memories';
 
 interface MemoryStore {
@@ -26,6 +27,7 @@ interface MemoryStore {
   selectAll: () => void;
   refreshMemories: () => Promise<void>;
   getStatistics: () => Promise<{ count: number; lastExtraction: string | null }>;
+  clearAllMemories: () => Promise<void>;
 }
 
 export const useMemoryStore = create<MemoryStore>((set, get) => ({
@@ -114,5 +116,10 @@ export const useMemoryStore = create<MemoryStore>((set, get) => ({
     const count = await getMemoryCount();
     const lastExtraction = await getLastExtractionTime();
     return { count, lastExtraction };
+  },
+
+  clearAllMemories: async () => {
+    await clearAllMemories();
+    set({ memories: [], selectedMemories: new Set() });
   },
 }));

@@ -59,9 +59,10 @@ export default function MemoryManagementScreen() {
     setSearchQuery,
     refreshMemories,
     getStatistics,
+    clearAllMemories,
   } = useMemoryStore();
 
-  const { messages } = useChatStore();
+  const { messages, clearAllMessages } = useChatStore();
 
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
     visible: false,
@@ -70,6 +71,7 @@ export default function MemoryManagementScreen() {
   });
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [memoryToDelete, setMemoryToDelete] = useState<string | null>(null);
+  const [clearDialogVisible, setClearDialogVisible] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [statistics, setStatistics] = useState<{ count: number; lastExtraction: string | null }>({
     count: 0,
@@ -172,6 +174,22 @@ export default function MemoryManagementScreen() {
     setEditingContent('');
   };
 
+  const handleClearPress = () => {
+    setClearDialogVisible(true);
+  };
+
+  const handleClearConfirm = async () => {
+    try {
+      await clearAllMemories();
+      await clearAllMessages();
+      setToast({ visible: true, message: '已清空所有记忆和聊天记录', type: 'success' });
+      await loadStatistics();
+    } catch {
+      setToast({ visible: true, message: '清空失败', type: 'error' });
+    }
+    setClearDialogVisible(false);
+  };
+
   // 渲染列表头部
   const renderHeader = () => (
     <View style={styles.headerContent}>
@@ -181,6 +199,7 @@ export default function MemoryManagementScreen() {
         onChangeText={setSearchInput}
         onSearch={handleSearch}
         isExtracting={isExtracting}
+        onClear={handleClearPress}
         onExtract={handleManualExtraction}
       />
       <MemoryCategoryFilter selectedCategory={selectedCategory} onCategoryChange={handleCategoryChange} />
@@ -256,6 +275,14 @@ export default function MemoryManagementScreen() {
           setDeleteDialogVisible(false);
           setMemoryToDelete(null);
         }}
+      />
+
+      <ConfirmDialog
+        visible={clearDialogVisible}
+        title="清空记忆"
+        message="确定要清空所有记忆和聊天记录吗？此操作不可恢复。"
+        onConfirm={handleClearConfirm}
+        onCancel={() => setClearDialogVisible(false)}
       />
     </View>
   );

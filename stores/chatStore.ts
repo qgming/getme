@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { ChatMessage } from '../services/aiChat';
-import { getRecentChatMessages, saveChatMessage, deleteChatMessage } from '../database/chatMessages';
+import { getRecentChatMessages, saveChatMessage, deleteChatMessage, clearAllChatMessages } from '../database/chatMessages';
 import { extractMemoriesInBackground } from '../services/aiMemoryExtraction';
 
 interface ChatStore {
@@ -25,6 +25,9 @@ interface ChatStore {
 
   // 删除消息
   deleteMessage: (messageId: string) => Promise<void>;
+
+  // 清空所有消息
+  clearAllMessages: () => Promise<void>;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -66,5 +69,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set((state) => ({
       messages: state.messages.filter((msg) => msg.id !== messageId),
     }));
+  },
+
+  clearAllMessages: async () => {
+    await clearAllChatMessages();
+    set({ messages: [] });
   },
 }));

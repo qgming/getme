@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import { useTheme } from '../../hooks/useTheme';
 import { ChatMessage } from '../../services/aiChat';
 
@@ -24,14 +25,36 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onLongPre
         { backgroundColor: message.role === 'user' ? colors.primary : colors.surface },
       ]}
     >
-      <Text
-        style={[
-          styles.messageText,
-          { color: message.role === 'user' ? '#fff' : colors.text },
-        ]}
-      >
-        {message.content}
-      </Text>
+      {message.role === 'user' ? (
+        <Text
+          style={[
+            styles.messageText,
+            { color: '#fff' },
+          ]}
+        >
+          {message.content}
+        </Text>
+      ) : (
+        <Markdown
+          style={{
+            body: { color: colors.text },
+            heading1: { color: colors.text, fontSize: 20, fontWeight: 'bold', marginVertical: 8 },
+            heading2: { color: colors.text, fontSize: 18, fontWeight: 'bold', marginVertical: 6 },
+            heading3: { color: colors.text, fontSize: 16, fontWeight: 'bold', marginVertical: 4 },
+            paragraph: { color: colors.text, fontSize: 15, lineHeight: 20, marginVertical: 2 },
+            strong: { fontWeight: 'bold' },
+            em: { fontStyle: 'italic' },
+            code_inline: { backgroundColor: colors.card, color: colors.primary, paddingHorizontal: 4, borderRadius: 4, fontSize: 14 },
+            code_block: { backgroundColor: colors.card, padding: 8, borderRadius: 6, marginVertical: 4, fontSize: 14 },
+            fence: { backgroundColor: colors.card, padding: 8, borderRadius: 6, marginVertical: 4, fontSize: 14 },
+            bullet_list: { marginVertical: 4 },
+            ordered_list: { marginVertical: 4 },
+            list_item: { marginVertical: 2 },
+          }}
+        >
+          {message.content}
+        </Markdown>
+      )}
     </Pressable>
   );
 };

@@ -64,17 +64,36 @@ export const sendChatMessage = async (
   console.log('模型:', model.name);
   console.log('工具数量:', AI_TOOLS.length);
 
-  callbacks?.onThinking?.('正在思考中...');
+  // 不在开始时显示"思考中"，让第一个工具调用直接显示
 
-  const result = await makeNonStreamRequest(
-    provider.baseUrl,
-    provider.apiKey,
-    model.modelId,
-    apiMessages,
-    callbacks
-  );
+  // 支持多轮工具调用
+  let currentMessages = [...apiMessages];
+  let maxRounds = 10; // 最多10轮工具调用，防止无限循环
+  let roundCount = 0;
 
-  if (result.toolCalls?.length) {
+  while (roundCount < maxRounds) {
+    roundCount++;
+    console.log(`=== 第 ${roundCount} 轮 API 调用 ===`);
+
+    const result = await makeNonStreamRequest(
+      provider.baseUrl,
+      provider.apiKey,
+      model.modelId,
+      currentMessages,
+      callbacks,
+      true // 每轮都包含工具定义，确保模型能正确识别工具调用
+    );
+
+    // 如果没有工具调用，说明已经得到最终答案
+    if (!result.toolCalls?.length) {
+      console.log('没有工具调用，返回最终答案，长度:', result.content.length);
+      // 清理内容中的工具调用标记
+      const cleanedContent = cleanToolCallMarkers(result.content);
+      callbacks?.onComplete?.(cleanedContent);
+      return cleanedContent;
+    }
+
+    // 有工具调用，执行工具
     console.log('检测到工具调用:', result.toolCalls.length, '个');
 
     const toolMessages: any[] = [];
@@ -110,8 +129,9 @@ export const sendChatMessage = async (
       }
     }
 
-    const messagesWithToolResults = [
-      ...apiMessages,
+    // 更新消息历史，准备下一轮
+    currentMessages = [
+      ...currentMessages,
       {
         role: 'assistant',
         content: result.content || null,
@@ -120,26 +140,40 @@ export const sendChatMessage = async (
       ...toolMessages
     ];
 
-    console.log('=== 第二次API调用（包含工具结果） ===');
-    console.log('消息数量:', messagesWithToolResults.length);
-    console.log('工具消息数量:', toolMessages.length);
-
-    callbacks?.onThinking?.('正在整理回答...');
-
-    const finalResult = await makeNonStreamRequest(
-      provider.baseUrl,
-      provider.apiKey,
-      model.modelId,
-      messagesWithToolResults,
-      callbacks,
-      false
-    );
-
-    console.log('最终响应长度:', finalResult.content.length);
-    return finalResult.content;
+    console.log('工具执行完成，准备下一轮调用');
+    // 不再在这里添加"整理回答中"
+    // 让工具调用提示持续显示，直到下一个工具调用或完成
   }
 
-  return result.content;
+  // 如果达到最大轮数还没有结果，返回错误
+  console.warn('达到最大工具调用轮数，强制结束');
+  const errorMessage = '抱歉，处理时间过长，请稍后再试。';
+  callbacks?.onComplete?.(errorMessage);
+  return errorMessage;
+};
+
+/**
+ * 清理内容中的工具调用标记
+ * 移除 DeepSeek 等模型可能返回的文本形式的工具调用标记
+ */
+const cleanToolCallMarkers = (content: string): string => {
+  if (!content) return content;
+
+  // 移除 <｜DSML｜function_calls> 标记及其内容
+  let cleaned = content.replace(/<｜DSML｜function_calls>[\s\S]*?<\/｜DSML｜function_calls>/g, '');
+
+  // 移除单独的 <｜DSML｜invoke> 标记
+  cleaned = cleaned.replace(/<｜DSML｜invoke[^>]*>[\s\S]*?<\/｜DSML｜invoke>/g, '');
+
+  // 移除其他可能的工具调用标记格式
+  cleaned = cleaned.replace(/<\|function_calls\|>[\s\S]*?<\/\|function_calls\|>/g, '');
+  cleaned = cleaned.replace(/<function_calls>[\s\S]*?<\/function_calls>/g, '');
+
+  // 清理多余的空行（超过2个连续换行）
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+  // 清理首尾空白
+  return cleaned.trim();
 };
 
 /**
@@ -209,7 +243,7 @@ const makeNonStreamRequest = (
           });
         } else {
           console.log('没有工具调用，直接返回内容，长度:', content.length);
-          callbacks?.onComplete?.(content);
+          // 不在这里调用 onComplete，由 sendChatMessage 统一处理
           resolve({ content });
         }
       })
@@ -231,6 +265,10 @@ export const createDefaultSystemPrompt = async (): Promise<string> => {
 
   // 获取所有标签
   const allTags = await getAllUniqueTags();
+  console.log('[系统提示词] 获取到的标签数量:', allTags.length);
+  if (allTags.length > 0) {
+    console.log('[系统提示词] 标签列表:', allTags.join('、'));
+  }
 
   // 获取当前时间
   const currentTime = new Date().toLocaleString('zh-CN', {
@@ -278,22 +316,39 @@ export const createDefaultSystemPrompt = async (): Promise<string> => {
 
 【可用工具 - 必须主动使用！】
 你有四个工具来检索信息：
-1. get_notes_by_tags - 根据标签找笔记（比如"工作"、"学习"、"想法"）
-2. get_notes_by_time_range - 找特定时间的笔记（比如最近7天、30天）
+1. get_notes_by_tags - 根据标签找笔记
+   - 参数：tags (数组，可以传多个标签), limit (数量限制)
+   - 示例：get_notes_by_tags(tags=["工作", "学习"], limit=10)
+
+2. get_notes_by_time_range - 找特定时间的笔记
+   - 参数：date_field ("createdAt"或"updatedAt"), days_ago (多少天前), limit (数量限制)
+   - 示例：get_notes_by_time_range(date_field="updatedAt", days_ago=7, limit=20)
+
 3. search_notes_content - 搜索包含关键词的笔记
-4. get_memories - 检索关于我的长期记忆信息（背景、偏好、习惯、目标等）
+   - 参数：query (搜索关键词), limit (数量限制)
+   - 示例：search_notes_content(query="学习计划", limit=15)
+
+4. get_memories - 检索关于我的长期记忆信息
+   - 参数：query (查询内容), limit (数量限制)
+   - 示例：get_memories(query="习惯 偏好", limit=10)
 
 什么时候必须调用工具：
-我问任何关于过去的事、记录、想法 → 立刻查
-我提到工作、学习、生活、项目名等主题 → 用标签或关键词查
-我问"最近"、"这周"、"这个月" → 用时间范围查
-我问"我有没有"、"我做过"、"我想过" → 先查再答
-问题可能和笔记有关 → 主动查，别猜
-我问开放性问题（"我该做啥"、"有啥建议"）→ 先查最近笔记了解情况
-需要了解我的背景、偏好、习惯时 → 用 get_memories 查询长期记忆
+• 我问任何关于过去的事、记录、想法 → 立刻查
+• 我提到工作、学习、生活、项目名等主题 → 用标签或关键词查
+• 我问"最近"、"这周"、"这个月" → 用时间范围查
+• 我问"我有没有"、"我做过"、"我想过" → 先查再答
+• 问题可能和笔记有关 → 主动查，别猜
+• 我问开放性问题（"我该做啥"、"有啥建议"）→ 先查最近笔记了解情况
+• 需要了解我的背景、偏好、习惯时 → 用 get_memories 查询长期记忆
 
 工具使用原则：
-优先用工具，别凭记忆猜。可以连续用多个工具获取更多信息。先查笔记和记忆，再基于真实内容回答。第一次查不够就换个关键词或时间再查。查到内容后自然融入对话，别生硬列举。没找到就诚实说，但可以给常识性建议。
+• 优先用工具，别凭记忆猜
+• 可以连续用多个工具获取更多信息（不要一次只查一个就停止）
+• 先查笔记和记忆，再基于真实内容回答
+• 第一次查不够就换个关键词、标签或时间再查
+• 查到内容后自然融入对话，别生硬列举
+• 没找到就诚实说，但可以给常识性建议
+• 使用标签时，请从下面【我使用的标签】列表中选择准确的标签名
 
 错误示范：
 ❌ 我问"最近在忙啥？" → 你直接答"可能在忙工作吧"
