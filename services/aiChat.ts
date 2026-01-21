@@ -2,7 +2,7 @@ import { getProviderById, getModelById } from '../database/aiProviders';
 import { getDefaultModel } from '../database/defaultModels';
 import { getPersonalizationInfo } from '../database/personalization';
 import { getAllUniqueTags } from '../database/notes';
-import EventSource from 'react-native-sse';
+import { AI_TOOLS, executeToolCall } from './aiTools';
 
 export interface ChatMessage {
   id: string;
@@ -20,8 +20,17 @@ export interface ChatStreamCallbacks {
   onToolResult?: (toolName: string, result: any) => void;
 }
 
+interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
 /**
- * 发送聊天消息并获取AI响应（流式）
+ * 发送聊天消息并获取AI响应（支持工具调用）
  * @param messages 对话历史消息
  * @param callbacks 流式回调函数
  * @returns Promise<string> 完整的AI响应内容
@@ -30,7 +39,6 @@ export const sendChatMessage = async (
   messages: ChatMessage[],
   callbacks?: ChatStreamCallbacks
 ): Promise<string> => {
-  // 获取AI分身的默认模型配置
   const defaultModel = await getDefaultModel('avatar');
   if (!defaultModel) {
     throw new Error('未配置AI分身模型，请前往设置页面配置');
@@ -43,92 +51,174 @@ export const sendChatMessage = async (
     throw new Error('模型或提供商配置不完整');
   }
 
-  // 分离系统消息和对话消息
   const systemMessages = messages.filter(msg => msg.role === 'system');
   const conversationMessages = messages.filter(msg => msg.role !== 'system');
-
-  // 只保留最近的20条对话记录（用户和助手的消息）
   const recentConversation = conversationMessages.slice(-20);
 
-  // 构建API请求的消息格式：系统消息 + 最近20条对话
   const apiMessages = [
-    ...systemMessages.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    })),
-    ...recentConversation.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    }))
+    ...systemMessages.map(msg => ({ role: msg.role, content: msg.content })),
+    ...recentConversation.map(msg => ({ role: msg.role, content: msg.content }))
   ];
 
-  // 详细日志输出
   console.log('=== AI对话请求 ===');
   console.log('模型:', model.name);
-  console.log('消息数量:', apiMessages.length);
-  console.log('\n--- 系统提示词 ---');
-  const systemMessage = apiMessages.find(msg => msg.role === 'system');
-  if (systemMessage) {
-    console.log(systemMessage.content);
-  }
-  console.log('\n--- 用户输入 ---');
-  const userMessages = apiMessages.filter(msg => msg.role === 'user');
-  userMessages.forEach((msg, index) => {
-    console.log(`[用户消息 ${index + 1}]:`, msg.content);
-  });
-  console.log('==================\n');
+  console.log('工具数量:', AI_TOOLS.length);
 
   callbacks?.onThinking?.('正在思考中...');
 
-  return new Promise((resolve, reject) => {
-    let fullContent = '';
+  const result = await makeNonStreamRequest(
+    provider.baseUrl,
+    provider.apiKey,
+    model.modelId,
+    apiMessages,
+    callbacks
+  );
 
-    const es = new EventSource(`${provider.baseUrl}/chat/completions`, {
+  if (result.toolCalls?.length) {
+    console.log('检测到工具调用:', result.toolCalls.length, '个');
+
+    const toolMessages: any[] = [];
+    for (const toolCall of result.toolCalls) {
+      try {
+        const args = JSON.parse(toolCall.function.arguments);
+        console.log('执行工具:', toolCall.function.name, '参数:', args);
+        callbacks?.onToolCall?.(toolCall.function.name, args);
+
+        const toolResult = await executeToolCall(toolCall.function.name, args);
+        console.log('工具结果:', toolCall.function.name, '结果长度:', toolResult.length);
+
+        try {
+          callbacks?.onToolResult?.(toolCall.function.name, JSON.parse(toolResult));
+        } catch (e) {
+          console.warn('工具结果解析失败，但继续执行:', e);
+        }
+
+        toolMessages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          name: toolCall.function.name,
+          content: toolResult
+        });
+      } catch (error) {
+        console.error('工具执行失败:', toolCall.function.name, error);
+        toolMessages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          name: toolCall.function.name,
+          content: JSON.stringify({ error: true, message: `工具执行失败: ${error}` })
+        });
+      }
+    }
+
+    const messagesWithToolResults = [
+      ...apiMessages,
+      {
+        role: 'assistant',
+        content: result.content || null,
+        tool_calls: result.toolCalls
+      },
+      ...toolMessages
+    ];
+
+    console.log('=== 第二次API调用（包含工具结果） ===');
+    console.log('消息数量:', messagesWithToolResults.length);
+    console.log('工具消息数量:', toolMessages.length);
+
+    callbacks?.onThinking?.('正在整理回答...');
+
+    const finalResult = await makeNonStreamRequest(
+      provider.baseUrl,
+      provider.apiKey,
+      model.modelId,
+      messagesWithToolResults,
+      callbacks,
+      false
+    );
+
+    console.log('最终响应长度:', finalResult.content.length);
+    return finalResult.content;
+  }
+
+  return result.content;
+};
+
+/**
+ * 执行非流式API请求
+ */
+const makeNonStreamRequest = (
+  baseUrl: string,
+  apiKey: string,
+  modelId: string,
+  messages: any[],
+  callbacks?: ChatStreamCallbacks,
+  includeTools: boolean = true
+): Promise<{ content: string; toolCalls?: ToolCall[] }> => {
+  return new Promise((resolve, reject) => {
+    const requestBody: any = {
+      model: modelId,
+      messages: messages,
+      stream: false,
+    };
+
+    if (includeTools) {
+      requestBody.tools = AI_TOOLS;
+    }
+
+    console.log('发送请求到:', `${baseUrl}/chat/completions`);
+    console.log('请求体:', JSON.stringify(requestBody, null, 2).substring(0, 500) + '...');
+
+    fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${provider.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: model.modelId,
-        messages: apiMessages,
-        stream: true,
-      }),
-    });
-
-    es.addEventListener('open', () => {
-      callbacks?.onThinking?.('');
-    });
-
-    es.addEventListener('message', (event) => {
-      const data = event.data;
-      if (!data || data === '[DONE]') {
-        es.close();
-        callbacks?.onComplete?.(fullContent);
-        resolve(fullContent);
-        return;
-      }
-
-      try {
-        const content = JSON.parse(data).choices?.[0]?.delta?.content;
-        if (content) {
-          fullContent += content;
-          callbacks?.onStream?.(content);
+      body: JSON.stringify(requestBody),
+    })
+      .then(response => {
+        console.log('响应状态:', response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      } catch (error) {
-        console.error('解析流式响应失败:', error);
-      }
-    });
+        return response.json();
+      })
+      .then(data => {
+        console.log('API响应:', JSON.stringify(data, null, 2).substring(0, 500) + '...');
+        callbacks?.onThinking?.('');
 
-    es.addEventListener('error', (event: any) => {
-      es.close();
-      const errorMsg = event?.type === 'error' && event?.message
-        ? event.message
-        : 'Stream connection failed';
-      const error = new Error(errorMsg);
-      callbacks?.onError?.(error);
-      reject(error);
-    });
+        const message = data.choices?.[0]?.message;
+        if (!message) {
+          throw new Error('API响应中没有消息内容');
+        }
+
+        const content = message?.content || '';
+        const toolCalls = message?.tool_calls;
+
+        if (toolCalls?.length) {
+          console.log('检测到工具调用:', toolCalls.length, '个');
+          resolve({
+            content,
+            toolCalls: toolCalls.map((tc: any) => ({
+              id: tc.id,
+              type: 'function',
+              function: {
+                name: tc.function.name,
+                arguments: tc.function.arguments
+              }
+            }))
+          });
+        } else {
+          console.log('没有工具调用，直接返回内容，长度:', content.length);
+          callbacks?.onComplete?.(content);
+          resolve({ content });
+        }
+      })
+      .catch(error => {
+        console.error('请求失败:', error);
+        console.error('错误详情:', error.message, error.stack);
+        callbacks?.onError?.(error);
+        reject(error);
+      });
   });
 };
 
@@ -161,18 +251,27 @@ export const createDefaultSystemPrompt = async (): Promise<string> => {
 【对话风格 - 超级重要！】
 说话要自然随意，就像我平时和朋友聊天、发微信那样。可以用口语化表达、网络用语、甚至语气词（比如"嗯"、"哈哈"、"emmm"、"啊"、"呀"）。不要太正式、太客气、太完美，真实的人会有不完美。可以表达真实想法，不用总是积极正面。回答要简洁直接，不要长篇大论。
 
-【输出格式 - 绝对禁止markdown！】
-永远不要使用任何markdown格式！包括但不限于：
-不要用星号加粗（**文字**）或斜体（*文字*）
-不要用井号标题（# 标题）
-不要用短横线列表（- 列表项）
-不要用代码块（\`\`\`代码\`\`\`）
-不要用反引号（\`代码\`）
-不要用大于号引用（> 引用）
+【输出格式 - 绝对禁止markdown！这是铁律！】
+永远不要使用任何markdown格式！这不是建议，是强制要求！
+严格禁止：
+× 星号加粗 **文字** 或斜体 *文字*
+× 井号标题 # 标题 ## 标题
+× 短横线列表 - 列表项
+× 星号列表 * 列表项
+× 代码块 \`\`\`代码\`\`\`
+× 行内代码 \`代码\`
+× 引用 > 引用文字
+× 链接 [文字](链接)
+× 任何其他markdown语法
 
-就像发微信消息一样，纯文本自然表达。如果需要列举，可以用手打的数字（1. xxx换行2. xxx）或者用"第一"、"第二"、"还有"、"另外"这样的口语词。如果需要强调，就用"特别"、"真的"、"超级"这样的语气词，而不是加粗。
+正确做法：
+✓ 就像发微信一样，纯文本自然表达
+✓ 需要列举？用"1. xxx 2. xxx"或"第一、第二、还有、另外"
+✓ 需要强调？用"特别"、"真的"、"超级"、"重点是"这样的口语词
+✓ 需要分段？直接空一行就行
+✓ 想表达层次？用"首先...然后...最后..."或者简单的数字
 
-除非我明确说"写代码"、"列个清单"、"详细列出来"，否则就用最自然的聊天方式。
+记住：你是在和我聊天，不是在写文档！除非我明确说"写代码"、"列个清单"、"详细列出来"，否则就用最自然的聊天方式。
 
 【思维方式】
 基于我的笔记内容来回答，因为那些都是我记录的想法。可以从我的记录中发现模式，提醒我自己可能忽略的事。给建议时要符合我的性格和习惯，不要说教。遇到不确定的事就直说不确定，不要装作什么都知道。

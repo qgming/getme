@@ -16,21 +16,19 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import {
   MessageBubble,
   MessageTimestamp,
-  StreamingMessage,
   ToolCallIndicator,
   LoadingIndicator,
   shouldShowTimestamp,
 } from '../components/ai-avatar';
 import { useTheme } from '../hooks/useTheme';
-import { ChatMessage, createDefaultSystemPrompt } from '../services/aiChat';
-import { sendChatMessageWithTools } from '../services/aiChatWithTools';
+import { ChatMessage, createDefaultSystemPrompt, sendChatMessage } from '../services/aiChat';
 import { useChatStore } from '../stores/chatStore';
 import * as Clipboard from 'expo-clipboard';
 
 export default function AIAvatarScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { messages, isLoading, streamingContent, loadMessages, addMessage, setLoading, setStreamingContent, clearStreamingContent, deleteMessage } = useChatStore();
+  const { messages, isLoading, loadMessages, addMessage, setLoading, deleteMessage } = useChatStore();
   const [inputText, setInputText] = useState('');
   const [systemMessage, setSystemMessage] = useState<ChatMessage>({
     id: 'system',
@@ -54,6 +52,17 @@ export default function AIAvatarScreen() {
 
   // 工具调用状态
   const [toolCallStatus, setToolCallStatus] = useState<string | null>(null);
+
+  // 将消息按空行分割成多条消息
+  const splitMessageByBlankLines = (content: string): string[] => {
+    // 按连续的空行（两个或多个换行符）分割
+    const parts = content.split(/\n\s*\n+/);
+    // 过滤掉空字符串
+    return parts.filter(part => part.trim().length > 0);
+  };
+
+  // 延迟函数
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   // 初始化：加载系统提示词
   useEffect(() => {
@@ -140,50 +149,95 @@ export default function AIAvatarScreen() {
     await addMessage(userMessage);
     setInputText('');
     setLoading(true);
-    clearStreamingContent();
 
     try {
-      const assistantMessageId = `assistant-${Date.now()}`;
-
-      await sendChatMessageWithTools([systemMessage, ...messages, userMessage], {
-        onStream: (chunk: string) => {
-          setStreamingContent(chunk);
-        },
+      await sendChatMessage([systemMessage, ...messages, userMessage], {
         onComplete: async (fullContent: string) => {
-          const assistantMessage: ChatMessage = {
-            id: assistantMessageId,
-            role: 'assistant',
-            content: fullContent,
-            timestamp: Date.now(),
-          };
-          await addMessage(assistantMessage);
-          clearStreamingContent();
+          // 将消息按空行分割
+          const messageParts = splitMessageByBlankLines(fullContent);
+
+          // 如果只有一条消息，直接发送
+          if (messageParts.length === 1) {
+            const assistantMessage: ChatMessage = {
+              id: `assistant-${Date.now()}`,
+              role: 'assistant',
+              content: fullContent,
+              timestamp: Date.now(),
+            };
+            await addMessage(assistantMessage);
+          } else {
+            // 多条消息，逐条发送，每条之间有延迟
+            for (let i = 0; i < messageParts.length; i++) {
+              if (i > 0) {
+                // 每条消息之间延迟 800-1500ms，模拟真实打字
+                await delay(800 + Math.random() * 700);
+              }
+
+              const assistantMessage: ChatMessage = {
+                id: `assistant-${Date.now()}-${i}`,
+                role: 'assistant',
+                content: messageParts[i].trim(),
+                timestamp: Date.now(),
+              };
+              await addMessage(assistantMessage);
+            }
+          }
+
           setToolCallStatus(null);
           setLoading(false);
         },
+        onThinking: (message: string) => {
+          // 只在没有工具调用状态时显示思考中
+          if (!toolCallStatus && message) {
+            setToolCallStatus(message);
+          } else if (!message) {
+            // 清空思考状态，但保留工具调用状态
+            if (toolCallStatus === '正在思考中...') {
+              setToolCallStatus(null);
+            }
+          }
+        },
         onToolCall: (toolName: string, args: any) => {
           const friendlyNames: { [key: string]: string } = {
-            'get_notes_by_tags': '正在检索标签笔记',
-            'get_notes_by_time_range': '正在检索时间范围笔记',
-            'search_notes_content': '正在搜索笔记内容'
+            'get_notes_by_tags': '正在查找相关笔记',
+            'get_notes_by_time_range': '正在查找最近的笔记',
+            'search_notes_content': '正在搜索笔记内容',
+            'get_memories': '正在检索记忆'
           };
-          setToolCallStatus(friendlyNames[toolName] || '正在调用工具');
+          setToolCallStatus(friendlyNames[toolName] || '正在处理');
         },
         onToolResult: (toolName: string, result: any) => {
-          setToolCallStatus(null);
+          // 工具执行完成后，显示整理回答的状态
+          setToolCallStatus('正在整理回答');
         },
         onError: (error: Error) => {
           console.error('AI对话错误:', error);
           setLoading(false);
-          clearStreamingContent();
           setToolCallStatus(null);
+
+          // 显示错误提示
+          const errorMessage: ChatMessage = {
+            id: `error-${Date.now()}`,
+            role: 'assistant',
+            content: '抱歉，我遇到了一些问题，请稍后再试。',
+            timestamp: Date.now(),
+          };
+          addMessage(errorMessage);
         },
       });
     } catch (error) {
       console.error('发送消息失败:', error);
       setLoading(false);
-      clearStreamingContent();
       setToolCallStatus(null);
+
+      // 显示错误提示
+      const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: '抱歉，发送消息时出现了错误。',
+        timestamp: Date.now(),
+      };
+      await addMessage(errorMessage);
     }
   };
 
@@ -209,11 +263,9 @@ export default function AIAvatarScreen() {
           );
         })}
 
-        {isLoading && streamingContent && <StreamingMessage content={streamingContent} />}
-
         {toolCallStatus && <ToolCallIndicator status={toolCallStatus} />}
 
-        {isLoading && !streamingContent && !toolCallStatus && <LoadingIndicator />}
+        {isLoading && !toolCallStatus && <LoadingIndicator />}
       </ScrollView>
 
       {/* 输入框组件 */}

@@ -1,11 +1,11 @@
-import { getProviderById, getModelById } from '../database/aiProviders';
-import { getDefaultModel } from '../database/defaultModels';
-import { saveMemory } from '../database/memories';
-import { Memory } from '../types/Memory';
+import { getModelById, getProviderById } from "../database/aiProviders";
+import { getDefaultModel } from "../database/defaultModels";
+import { saveMemory } from "../database/memories";
+import { Memory } from "../types/Memory";
 
 interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   timestamp: number;
 }
@@ -13,17 +13,17 @@ interface ChatMessage {
 interface MemoryExtractionResult {
   memories: {
     content: string;
-    category: 'personal' | 'preference' | 'goal' | 'fact' | 'relationship';
+    category: "personal" | "preference" | "goal" | "fact" | "relationship";
   }[];
 }
 
 export const extractMemoriesFromConversation = async (
-  messages: ChatMessage[]
+  messages: ChatMessage[],
 ): Promise<Memory[]> => {
   try {
-    const defaultModel = await getDefaultModel('memory');
+    const defaultModel = await getDefaultModel("memory");
     if (!defaultModel) {
-      console.log('[记忆提取] 未配置记忆提取模型');
+      console.log("[记忆提取] 未配置记忆提取模型");
       return [];
     }
 
@@ -31,23 +31,23 @@ export const extractMemoriesFromConversation = async (
     const provider = await getProviderById(defaultModel.providerId);
 
     if (!model || !provider || !provider.apiKey) {
-      console.log('[记忆提取] 模型或提供商配置不完整');
+      console.log("[记忆提取] 模型或提供商配置不完整");
       return [];
     }
 
     // Format conversation for extraction
     const formattedConversation = messages
-      .filter(m => m.role !== 'system')
-      .map(m => `[${m.role === 'user' ? '用户' : 'AI'}]: ${m.content}`)
-      .join('\n\n');
+      .filter((m) => m.role !== "system")
+      .map((m) => `[${m.role === "user" ? "用户" : "AI"}]: ${m.content}`)
+      .join("\n\n");
 
-    const currentTime = new Date().toLocaleString('zh-CN', {
-      timeZone: 'Asia/Shanghai',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+    const currentTime = new Date().toLocaleString("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
     const prompt = `当前系统时间：${currentTime}
@@ -62,7 +62,7 @@ ${formattedConversation}
 2. 提取用户提到的重要事实、关系、项目等
 3. 每条记忆应该是独立的、具体的、有价值的
 4. 记忆应该是长期有用的信息，不是临时性的对话内容
-5. 提取3-8条记忆，宁缺毋滥
+5. 提取1-3条记忆，宁缺毋滥
 
 记忆分类：
 - personal: 个人信息（姓名、职业、背景等）
@@ -84,16 +84,16 @@ ${formattedConversation}
 只返回JSON，不要其他文字。`;
 
     const response = await fetch(`${provider.baseUrl}/chat/completions`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${provider.apiKey}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${provider.apiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: model.modelId,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
-        response_format: { type: 'json_object' },
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -105,7 +105,7 @@ ${formattedConversation}
     const resultText = data.choices?.[0]?.message?.content;
 
     if (!resultText) {
-      throw new Error('API返回结果为空');
+      throw new Error("API返回结果为空");
     }
 
     const result: MemoryExtractionResult = JSON.parse(resultText);
@@ -133,7 +133,7 @@ ${formattedConversation}
     console.log(`[记忆提取] 成功提取 ${savedMemories.length} 条记忆`);
     return savedMemories;
   } catch (error) {
-    console.error('[记忆提取] 提取失败:', error);
+    console.error("[记忆提取] 提取失败:", error);
     return [];
   }
 };
@@ -141,7 +141,7 @@ ${formattedConversation}
 // Background extraction wrapper (non-blocking)
 export const extractMemoriesInBackground = (messages: ChatMessage[]): void => {
   // Run extraction without blocking
-  extractMemoriesFromConversation(messages).catch(error => {
-    console.error('[记忆提取] 后台提取失败:', error);
+  extractMemoriesFromConversation(messages).catch((error) => {
+    console.error("[记忆提取] 后台提取失败:", error);
   });
 };

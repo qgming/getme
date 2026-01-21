@@ -21,7 +21,7 @@ const migrations: Migration[] = [
         const gemini = await aiDb.createProvider({
           name: 'Gemini',
           apiKey: Constants.expoConfig?.extra?.GEMINI_API_KEY || '',
-          baseUrl: 'http://149.104.31.184:7860/v1',
+          baseUrl: 'https://ai.qgming.com/v1',
           isEnabled: true,
           iconName: 'Gemini',
         });
@@ -186,7 +186,7 @@ const migrations: Migration[] = [
         await aiDb.updateProvider(xiaomiMimo.id, {
           name: 'Gemini',
           apiKey: Constants.expoConfig?.extra?.GEMINI_API_KEY || '',
-          baseUrl: 'http://149.104.31.184:7860/v1',
+          baseUrl: 'https://ai.qgming.com/v1',
           iconName: 'Gemini',
         });
 
