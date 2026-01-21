@@ -270,6 +270,7 @@ export default function MemoryManagementScreen() {
         visible={deleteDialogVisible}
         title="删除记忆"
         message="确定要删除这条记忆吗？"
+        isDestructive={true}
         onConfirm={handleDeleteConfirm}
         onCancel={() => {
           setDeleteDialogVisible(false);
@@ -281,6 +282,7 @@ export default function MemoryManagementScreen() {
         visible={clearDialogVisible}
         title="清空记忆"
         message="确定要清空所有记忆和聊天记录吗？此操作不可恢复。"
+        isDestructive={true}
         onConfirm={handleClearConfirm}
         onCancel={() => setClearDialogVisible(false)}
       />

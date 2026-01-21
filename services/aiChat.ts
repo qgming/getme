@@ -18,6 +18,7 @@ export interface ChatStreamCallbacks {
   onError?: (error: Error) => void;
   onToolCall?: (toolName: string, args: any) => void;
   onToolResult?: (toolName: string, result: any) => void;
+  abortSignal?: AbortSignal;
 }
 
 interface ToolCall {
@@ -74,6 +75,14 @@ export const sendChatMessage = async (
   while (roundCount < maxRounds) {
     roundCount++;
     console.log(`=== 第 ${roundCount} 轮 API 调用 ===`);
+
+    // 检查是否已被终止
+    if (callbacks?.abortSignal?.aborted) {
+      console.log('请求已被终止');
+      const abortMessage = '已终止';
+      callbacks?.onComplete?.(abortMessage);
+      return abortMessage;
+    }
 
     const result = await makeNonStreamRequest(
       provider.baseUrl,
@@ -201,14 +210,21 @@ const makeNonStreamRequest = (
     console.log('发送请求到:', `${baseUrl}/chat/completions`);
     console.log('请求体:', JSON.stringify(requestBody, null, 2).substring(0, 500) + '...');
 
-    fetch(`${baseUrl}/chat/completions`, {
+    const fetchOptions: RequestInit = {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
-    })
+    };
+
+    // 如果提供了 abortSignal，添加到 fetch 选项中
+    if (callbacks?.abortSignal) {
+      fetchOptions.signal = callbacks.abortSignal;
+    }
+
+    fetch(`${baseUrl}/chat/completions`, fetchOptions)
       .then(response => {
         console.log('响应状态:', response.status);
         if (!response.ok) {
@@ -250,8 +266,15 @@ const makeNonStreamRequest = (
       .catch(error => {
         console.error('请求失败:', error);
         console.error('错误详情:', error.message, error.stack);
-        callbacks?.onError?.(error);
-        reject(error);
+
+        // 检查是否是终止错误
+        if (error.name === 'AbortError') {
+          console.log('请求被用户终止');
+          resolve({ content: '已终止' });
+        } else {
+          callbacks?.onError?.(error);
+          reject(error);
+        }
       });
   });
 };

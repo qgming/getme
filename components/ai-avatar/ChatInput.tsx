@@ -1,4 +1,4 @@
-import { Send, Sparkles } from 'lucide-react-native';
+import { Send, Sparkles, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   Animated,
@@ -10,14 +10,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface ChatInputProps {
   value: string;
   onChangeText: (text: string) => void;
   onSend: () => void;
+  onAbort?: () => void;
   placeholder?: string;
   disabled?: boolean;
+  isLoading?: boolean;
   maxLength?: number;
 }
 
@@ -25,8 +27,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   value,
   onChangeText,
   onSend,
+  onAbort,
   placeholder = '有问题尽管问...',
   disabled = false,
+  isLoading = false,
   maxLength = 2000,
 }) => {
   const { colors } = useTheme();
@@ -102,23 +106,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             editable={!disabled}
           />
 
-          {/* 发送按钮 */}
+          {/* 发送/终止按钮 */}
           <TouchableOpacity
             style={[
               styles.sendButton,
               {
-                backgroundColor: value.trim() && !disabled
+                backgroundColor: isLoading
+                  ? colors.error
+                  : value.trim() && !disabled
                   ? colors.primary
                   : colors.border,
               },
             ]}
-            onPress={handleSend}
-            disabled={!value.trim() || disabled}
+            onPress={isLoading ? onAbort : handleSend}
+            disabled={!isLoading && (!value.trim() || disabled)}
           >
-            <Send
-              size={18}
-              color={value.trim() && !disabled ? '#fff' : colors.textSecondary}
-            />
+            {isLoading ? (
+              <X
+                size={18}
+                color="#fff"
+              />
+            ) : (
+              <Send
+                size={18}
+                color={value.trim() && !disabled ? '#fff' : colors.textSecondary}
+              />
+            )}
           </TouchableOpacity>
         </View>
       </View>

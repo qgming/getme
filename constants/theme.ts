@@ -17,6 +17,7 @@ export const Colors = {
     blue: '#3b82f6',
     blueLight: '#eff6ff',
     red: '#ef4444',
+    error: '#ef4444',
     tan: '#D2B48C',
   },
   dark: {
@@ -37,6 +38,7 @@ export const Colors = {
     blue: '#60a5fa',
     blueLight: '#1e3a8a',
     red: '#f87171',
+    error: '#dc2626',
     tan: '#d4a574',
   },
 };

@@ -9,7 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Brain } from 'lucide-react-native';
 import { CustomHeader } from '../components/CustomHeader';
-import { ChatInput } from '../components/ChatInput';
 import { ActionMenu, ActionItem } from '../components/ActionMenu';
 import { Toast } from '../components/Toast';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -18,6 +17,7 @@ import {
   MessageTimestamp,
   ToolCallIndicator,
   LoadingIndicator,
+  ChatInput,
   shouldShowTimestamp,
 } from '../components/ai-avatar';
 import { useTheme } from '../hooks/useTheme';
@@ -37,6 +37,7 @@ export default function AIAvatarScreen() {
     timestamp: Date.now(),
   });
   const scrollViewRef = useRef<ScrollView>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // ActionMenu 状态
   const [menuVisible, setMenuVisible] = useState(false);
@@ -161,6 +162,17 @@ export default function AIAvatarScreen() {
     router.push('/memory-management');
   };
 
+  // 终止当前请求
+  const handleAbort = () => {
+    if (abortControllerRef.current) {
+      console.log('用户终止请求');
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      clearStatusQueue();
+      setLoading(false);
+    }
+  };
+
   // ActionMenu 操作项
   const menuActions: ActionItem[] = [
     {
@@ -190,8 +202,12 @@ export default function AIAvatarScreen() {
     setInputText('');
     setLoading(true);
 
+    // 创建新的 AbortController
+    abortControllerRef.current = new AbortController();
+
     try {
       await sendChatMessage([systemMessage, ...messages, userMessage], {
+        abortSignal: abortControllerRef.current.signal,
         onComplete: async (fullContent: string) => {
           // 清空队列并添加完整消息
           clearStatusQueue();
@@ -205,6 +221,7 @@ export default function AIAvatarScreen() {
           await addMessage(assistantMessage);
 
           setLoading(false);
+          abortControllerRef.current = null;
         },
         onThinking: (message: string) => {
           // 思考状态添加到队列，显示时间较短
@@ -244,6 +261,7 @@ export default function AIAvatarScreen() {
           console.error('AI对话错误:', error);
           clearStatusQueue();
           setLoading(false);
+          abortControllerRef.current = null;
 
           // 显示错误提示
           const errorMessage: ChatMessage = {
@@ -259,6 +277,7 @@ export default function AIAvatarScreen() {
       console.error('发送消息失败:', error);
       clearStatusQueue();
       setLoading(false);
+      abortControllerRef.current = null;
 
       // 显示错误提示
       const errorMessage: ChatMessage = {
@@ -303,7 +322,9 @@ export default function AIAvatarScreen() {
         value={inputText}
         onChangeText={setInputText}
         onSend={handleSend}
+        onAbort={handleAbort}
         disabled={isLoading}
+        isLoading={isLoading}
         placeholder="有问题尽管问..."
       />
 
